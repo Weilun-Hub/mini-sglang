@@ -155,7 +155,7 @@ class Engine:
         )
         # Ensure all ranks have initialized the process group
         torch.cuda.synchronize(self.device)
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
         tp_cpu_group = torch.distributed.new_group(backend="gloo")
 
         target_devices = list(range(0, config.target_tp_size))
