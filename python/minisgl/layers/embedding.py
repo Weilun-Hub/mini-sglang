@@ -22,6 +22,7 @@ class VocabParallelEmbedding(BaseOP):
         tp_info = get_tp_info()
         tp_rank = tp_info.local_rank
         self.tp_size = tp_info.local_size
+        print(f"tp_rank:{tp_rank}, tp_size:{self.tp_size}")
         self.num_embeddings = num_embeddings
         self.num_embeddings_tp = divide_up(num_embeddings, self.tp_size)
         start_idx = self.num_embeddings_tp * tp_rank
