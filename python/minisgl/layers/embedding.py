@@ -5,7 +5,7 @@ from typing import Dict
 import torch
 import torch.nn.functional as F
 from minisgl.core import get_global_ctx
-from minisgl.distributed import DistributedCommunicator, get_tp_info
+from minisgl.distributed import DistributedCommunicator, CustomDistributedCommunicator, get_tp_info
 from minisgl.utils import divide_up, nvtx_annotate
 
 from .base import BaseOP
@@ -28,7 +28,7 @@ class VocabParallelEmbedding(BaseOP):
         finish_idx = min(start_idx + self.num_embeddings_tp, num_embeddings)
         self.vocab_range = (start_idx, finish_idx - start_idx)
         self.weight = torch.empty(self.num_embeddings_tp, embedding_dim)
-        self._comm = DistributedCommunicator(group)
+        self._comm = CustomDistributedCommunicator(group)
 
     @nvtx_annotate("Embedding")
     def forward(self, x: torch.Tensor) -> torch.Tensor:

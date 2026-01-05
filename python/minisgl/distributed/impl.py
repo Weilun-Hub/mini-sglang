@@ -82,6 +82,17 @@ class PyNCCLDistributedImpl(DistributedImpl):
         return result
 
 
+class CustomDistributedCommunicator:
+    def __init__(self, group: torch.distributed.ProcessGroup):
+        self.group = group
+        self.plugins = [CustomTorchDistributedImpl(self.group)]
+
+    def all_reduce(self, x: torch.Tensor) -> torch.Tensor:
+        return self.plugins[-1].all_reduce(x)
+
+    def all_gather(self, x: torch.Tensor) -> torch.Tensor:
+        return self.plugins[-1].all_gather(x)
+
 class DistributedCommunicator:
     plugins: List[DistributedImpl] = [TorchDistributedImpl()]
 
