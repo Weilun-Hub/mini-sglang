@@ -9,5 +9,5 @@ python3 -m minisgl \
     --draft-model-path ${DRAFT_PATH} \
     --target-tensor-parallel-size 1 \
     --draft-tensor-parallel-size 1 \
-    --max-cuda-graph-batch-size 4 \
+    --cuda-graph-max-bs 4 \
     --port 1996 \
