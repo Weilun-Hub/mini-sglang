@@ -82,7 +82,7 @@ class GraphRunner:
         use_dist_barrier = tp_info.size > 1 and torch.distributed.is_initialized()
         if use_dist_barrier:
             logger.info_rank0("Multi-rank detect: synchronizing before capturing CUDA graphs...")
-            torch.distributed.barrier()
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
         self.logits = torch.empty(
             (self.max_graph_bs, vocab_size),
@@ -111,7 +111,7 @@ class GraphRunner:
             pbar.desc = f"Capturing graphs: bs = {bs:<3} | avail_mem = {mem_GB(free_memory)}"
             pbar.refresh()
             if use_dist_barrier:
-                torch.distributed.barrier()
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             
             graph = torch.cuda.CUDAGraph()
             batch = Batch(reqs=[self.dummy_req] * bs, phase="decode")
