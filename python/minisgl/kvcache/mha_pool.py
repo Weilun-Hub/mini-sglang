@@ -24,7 +24,7 @@ class MHAKVCache(BaseKVCache):
         device: torch.device,
     ):
         tp_info = get_tp_info()
-        local_kv_heads = divide_even(num_kv_heads, tp_info.size)
+        local_kv_heads = divide_even(num_kv_heads, tp_info.local_size)
         match kv_layout:
             case KVCacheLayout.PageFirst:
                 kv_buffer = torch.empty(
