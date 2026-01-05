@@ -92,6 +92,7 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         "--target-tensor-parallel-size",
         "--target-tp-size",
         type=int,
+        dst="target_tp_size",
         default=1,
         help="The target tensor parallelism size.",
     )
@@ -100,6 +101,7 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         "--draft-tensor-parallel-size",
         "--draft-tp-size",
         type=int,
+        dst="draft_tp_size",
         default=1,
         help="The draft tensor parallelism size.",
     )
@@ -245,9 +247,7 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         else:
             kwargs["dtype"] = dtype_or_str
 
-    kwargs["tp_info"] = DistributedInfo(0, kwargs["target_tensor_parallel_size"] + kwargs["draft_tensor_parallel_size"], Role.TARGET, 0, kwargs["target_tensor_parallel_size"])
-    del kwargs["target_tensor_parallel_size"]
-    del kwargs["draft_tensor_parallel_size"]
+    kwargs["tp_info"] = DistributedInfo(0, kwargs["target_tp_size"] + kwargs["draft_tp_size"], Role.TARGET, 0, kwargs["target_tp_size"])
 
     result = ServerArgs(**kwargs)
     logger = init_logger(__name__)

@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 class EngineConfig:
     target_model_path: str
     draft_model_path: str
+    target_tp_size: int
+    draft_tp_size: int
     tp_info: DistributedInfo
     dtype: torch.dtype
     max_running_req: int = 256

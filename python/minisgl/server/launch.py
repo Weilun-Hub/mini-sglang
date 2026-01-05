@@ -58,8 +58,8 @@ def launch_server(run_shell: bool = False) -> None:
 
         mp.set_start_method("spawn", force=True)
 
-        target_size = server_args.target_tp_info.size
-        draft_size = server_args.draft_tp_info.size
+        target_size = server_args.target_tp_size
+        draft_size = server_args.draft_tp_size
         world_size = target_size + draft_size
         logger.info(f"Launching {world_size} = #target + #draft = {target_size} + {draft_size} scheduler subprocesses")
         
