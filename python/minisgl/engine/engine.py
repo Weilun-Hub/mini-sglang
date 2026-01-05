@@ -204,7 +204,7 @@ class Engine:
         free_memory = get_free_memory(self.device)
         free_mem_tensor = torch.tensor([free_memory, -free_memory], device="cpu", dtype=torch.int64)
         torch.distributed.all_reduce(
-            free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.tp_cpu_group
+            free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.sd_group
         )
         min_free_memory = int(free_mem_tensor[0].item())
         max_free_memory = -int(free_mem_tensor[1].item())
