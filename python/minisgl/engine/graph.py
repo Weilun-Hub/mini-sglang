@@ -78,6 +78,12 @@ class GraphRunner:
             logger.info_rank0("CUDA graph is disabled.")
             return graph_map
 
+        tp_info = get_tp_info()
+        use_dist_barrier = tp_info.tp_size > 1 and torch.distributed.is_initialized()
+        if use_dist_barrier:
+            logger.info_rank0("Multi-rank detect: synchronizing before capturing CUDA graphs...")
+            torch.distributed.barrier()
+
         self.logits = torch.empty(
             (self.max_graph_bs, vocab_size),
             dtype=torch.float32,
@@ -104,6 +110,9 @@ class GraphRunner:
             free_memory = get_free_memory(self.device)
             pbar.desc = f"Capturing graphs: bs = {bs:<3} | avail_mem = {mem_GB(free_memory)}"
             pbar.refresh()
+            if use_dist_barrier:
+                torch.distributed.barrier()
+            
             graph = torch.cuda.CUDAGraph()
             batch = Batch(reqs=[self.dummy_req] * bs, phase="decode")
             self.attn_backend.prepare_for_capture(batch)
