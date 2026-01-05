@@ -61,6 +61,7 @@ class Engine:
                 logger.info_rank0(f"Creating {self.role.value} model on meta device")
                 self.model = create_model(config.draft_model_path, config.model_config)
         self.model.load_state_dict(self._load_weight_state_dict(config))
+        torch.distributed.barrier()
         self.num_pages = self.dummy_page = self._determine_num_pages(init_free_memory, config)
         self.kv_cache = create_kvcache(
             model_config=config.model_config,
