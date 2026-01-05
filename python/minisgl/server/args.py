@@ -92,7 +92,7 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         "--target-tensor-parallel-size",
         "--target-tp-size",
         type=int,
-        dst="target_tp_size",
+        dest="target_tp_size",
         default=1,
         help="The target tensor parallelism size.",
     )
@@ -101,7 +101,7 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         "--draft-tensor-parallel-size",
         "--draft-tp-size",
         type=int,
-        dst="draft_tp_size",
+        dest="draft_tp_size",
         default=1,
         help="The draft tensor parallelism size.",
     )
