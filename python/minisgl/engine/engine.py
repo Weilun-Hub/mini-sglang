@@ -49,15 +49,16 @@ class Engine:
 
         self.tp_cpu_group, self.sd_group, self.sd_cpu_group, self.verify_group = self._init_communication(config)
         init_free_memory = self._sync_get_memory()[1]
-        logger.info_rank0(f"Free memory before loading model: {mem_GB(init_free_memory)}")
+        logger.info_rank0(f"{self.role.value} Free memory before loading model: {mem_GB(init_free_memory)}")
 
         # load model and determine number of pages
         set_rope_device(self.device)
         with torch.device("meta"), torch_dtype(config.dtype):
             if self.role == Role.TARGET:
-                logger.info_rank0("Creating target model on meta device")
+                logger.info_rank0(f"Creating {self.role.value} model on meta device")
                 self.model = create_model(config.target_model_path, config.model_config)
             else:
+                logger.info_rank0(f"Creating {self.role.value} model on meta device")
                 self.model = create_model(config.draft_model_path, config.model_config)
         self.model.load_state_dict(self._load_weight_state_dict(config))
         self.num_pages = self.dummy_page = self._determine_num_pages(init_free_memory, config)
@@ -84,7 +85,7 @@ class Engine:
         self.sampler = Sampler(self.device, self.model_config.vocab_size)
 
         post_free_memory = self._sync_get_memory()[0]
-        logger.info_rank0(f"Free memory after initialization: {mem_GB(post_free_memory)}")
+        logger.info_rank0(f"{self.role.value} {config.tp_info.local_rank} Free memory after initialization: {mem_GB(post_free_memory)}")
 
         # cuda graph related
         self.dummy_req = Req(
@@ -200,7 +201,7 @@ class Engine:
 
         assert num_pages > 1, "Not enough memory for KV cache, try reducing --num-tokens"
         real_kv_size = num_pages * cache_per_page
-        logger.info(f"Allocating {num_pages} pages for KV cache, K + V = {mem_GB(real_kv_size)}")
+        logger.info(f"{self.role.value} {config.tp_info.local_rank} Allocating {num_pages} pages for KV cache, K + V = {mem_GB(real_kv_size)}")
         return num_pages
 
     def _sync_get_memory(self) -> Tuple[int, int]:
