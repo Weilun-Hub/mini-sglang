@@ -48,11 +48,12 @@ class ParallelLMHead(VocabParallelEmbedding):
         self,
         num_embeddings: int,
         embedding_dim: int,
+        group: torch.distributed.ProcessGroup,
         bias: bool = False,
         tie_word_embeddings: bool = False,
         tied_embedding: VocabParallelEmbedding | None = None,
     ):
-        super().__init__(num_embeddings, embedding_dim)
+        super().__init__(num_embeddings, embedding_dim, group=group)
         self.bias = torch.empty(self.num_embeddings_tp) if bias else None
         self.tied_embedding = tied_embedding
         assert (tied_embedding is not None) == tie_word_embeddings
