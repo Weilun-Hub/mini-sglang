@@ -47,7 +47,7 @@ class Engine:
 
         self.role = config.tp_info.role
 
-        self.tp_cpu_group, self.sd_group, self.verify_group = self._init_communication(config)
+        self.tp_cpu_group, self.sd_group, self.sd_cpu_group, self.verify_group = self._init_communication(config)
         init_free_memory = self._sync_get_memory()[1]
         logger.info_rank0(f"Free memory before loading model: {mem_GB(init_free_memory)}")
 
@@ -148,20 +148,27 @@ class Engine:
         target_devices = list(range(0, config.target_tp_size))
         draft_devices = list(range(config.target_tp_size, config.tp_info.size))
         verify_devices = target_devices + [draft_devices[0]]
+
+        target_cpu_group = torch.distributed.new_group(target_devices, backend="gloo")
+        draft_cpu_group = torch.distributed.new_group(draft_devices, backend="gloo")
+
         target_group = torch.distributed.new_group(target_devices)
         draft_group = torch.distributed.new_group(draft_devices)
         verify_group = torch.distributed.new_group(verify_devices)
         if config.tp_info.role == Role.TARGET:
             sd_group = target_group
+            sd_cpu_group = target_cpu_group
         else:
             sd_group = draft_group
+            sd_cpu_group = draft_cpu_group
 
         
         assert tp_cpu_group is not None
         assert sd_group is not None
+        assert sd_cpu_group is not None
         assert verify_group is not None
 
-        return tp_cpu_group, sd_group, verify_group
+        return tp_cpu_group, sd_group, sd_cpu_group, verify_group
 
     def _load_weight_state_dict(self, config: EngineConfig) -> Dict[str, torch.Tensor]:
         if config.use_dummy_weight:
@@ -204,7 +211,7 @@ class Engine:
         free_memory = get_free_memory(self.device)
         free_mem_tensor = torch.tensor([free_memory, -free_memory], device="cpu", dtype=torch.int64)
         torch.distributed.all_reduce(
-            free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.sd_group
+            free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.sd_cpu_group
         )
         min_free_memory = int(free_mem_tensor[0].item())
         max_free_memory = -int(free_mem_tensor[1].item())
