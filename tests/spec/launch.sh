@@ -1,5 +1,5 @@
 
-export CUDA_VISIBLE_DEVICES="6,7"
+export CUDA_VISIBLE_DEVICES="4,5"
 
 TARGET_PATH="/media/disk1/models/Qwen3-14B"
 DRAFT_PATH="/home/relay/liujiacheng06/models/Qwen3-0.6B"
