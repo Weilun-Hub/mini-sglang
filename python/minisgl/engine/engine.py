@@ -48,6 +48,7 @@ class Engine:
         self.role = config.tp_info.role
 
         self.tp_cpu_group, self.sd_group, self.sd_cpu_group, self.verify_group = self._init_communication(config)
+        logger.info(f"Rank {torch.distributed.get_rank() if torch.distributed.is_initialized() else 'unknown'}: About to sync memory")
         init_free_memory = self._sync_get_memory()[1]
         logger.info_rank0(f"{self.role.value} Free memory before loading model: {mem_GB(init_free_memory)}")
 
@@ -61,7 +62,13 @@ class Engine:
                 logger.info_rank0(f"Creating {self.role.value} model on meta device")
                 self.model = create_model(config.draft_model_path, config.model_config)
         self.model.load_state_dict(self._load_weight_state_dict(config))
-        torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+        logger.info(f"Rank {torch.distributed.get_rank()}: About to barrier after model loading")
+        try:
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+        except RuntimeError as e:
+            logger.error(f"Distributed barrier failed after model loading: {e}")
+            raise
+        logger.info(f"Rank {torch.distributed.get_rank()}: Passed barrier after model loading")
         self.num_pages = self.dummy_page = self._determine_num_pages(init_free_memory, config)
         self.kv_cache = create_kvcache(
             model_config=config.model_config,
@@ -85,6 +92,7 @@ class Engine:
         set_global_ctx(self.ctx)
         self.sampler = Sampler(self.device, self.model_config.vocab_size)
 
+        logger.info(f"Rank {torch.distributed.get_rank()}: About to sync memory after initialization")
         post_free_memory = self._sync_get_memory()[0]
         logger.info_rank0(f"{self.role.value} {config.tp_info.local_rank} Free memory after initialization: {mem_GB(post_free_memory)}")
 
@@ -145,6 +153,9 @@ class Engine:
             timeout=timedelta(seconds=config.distributed_timeout),
             init_method=config.distributed_addr,
         )
+        # Ensure all ranks have initialized the process group
+        torch.cuda.synchronize(self.device)
+        torch.distributed.barrier()
         tp_cpu_group = torch.distributed.new_group(backend="gloo")
 
         target_devices = list(range(0, config.target_tp_size))
@@ -212,9 +223,20 @@ class Engine:
         torch.cuda.reset_peak_memory_stats(self.device)
         free_memory = get_free_memory(self.device)
         free_mem_tensor = torch.tensor([free_memory, -free_memory], device="cpu", dtype=torch.int64)
-        torch.distributed.all_reduce(
-            free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.sd_cpu_group
-        )
+
+        rank = torch.distributed.get_rank()
+        logger.info(f"Rank {rank}: About to all_reduce memory info")
+        try:
+            torch.distributed.all_reduce(
+                free_mem_tensor, op=torch.distributed.ReduceOp.MIN, group=self.sd_cpu_group
+            )
+            logger.info(f"Rank {rank}: Completed all_reduce memory info")
+        except RuntimeError as e:
+            logger.error(f"all_reduce failed in _sync_get_memory: {e}")
+            # Try to get individual rank memory info for debugging
+            rank_info = f"rank={torch.distributed.get_rank() if torch.distributed.is_initialized() else 'unknown'}"
+            logger.error(f"Rank info: {rank_info}, free_memory={mem_GB(free_memory)}")
+            raise
         min_free_memory = int(free_mem_tensor[0].item())
         max_free_memory = -int(free_mem_tensor[1].item())
         if max_free_memory - min_free_memory > 2 * 1024 * 1024 * 1024:

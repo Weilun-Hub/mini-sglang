@@ -81,9 +81,11 @@ class GraphRunner:
         tp_info = get_tp_info()
         use_dist_barrier = tp_info.size > 1 and torch.distributed.is_initialized()
         if use_dist_barrier:
-            logger.info_rank0("Multi-rank detect: synchronizing before capturing CUDA graphs...")
+            rank = torch.distributed.get_rank()
+            logger.info(f"Rank {rank}: Multi-rank detect: synchronizing before capturing CUDA graphs...")
             try:
                 torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                logger.info(f"Rank {rank}: Passed barrier before graph capture")
             except RuntimeError as e:
                 logger.error(f"Distributed barrier failed before graph capture: {e}")
                 raise
@@ -128,9 +130,11 @@ class GraphRunner:
 
         # Final synchronization barrier to ensure all ranks completed graph capture
         if use_dist_barrier:
-            logger.info_rank0("Synchronizing after CUDA graph capture completion...")
+            rank = torch.distributed.get_rank()
+            logger.info(f"Rank {rank}: Synchronizing after CUDA graph capture completion...")
             try:
                 torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                logger.info(f"Rank {rank}: Passed final barrier after graph capture")
             except RuntimeError as e:
                 logger.error(f"Distributed barrier failed after graph capture: {e}")
                 raise
