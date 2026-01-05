@@ -200,7 +200,7 @@ class Engine:
         cache_per_page = (
             2  # key + value
             * self.model_config.head_dim
-            * divide_even(self.model_config.num_kv_heads, config.tp_info.size)
+            * divide_even(self.model_config.num_kv_heads, config.tp_info.local_size)
             * config.page_size
             * self.dtype.itemsize
             * self.model_config.num_layers
