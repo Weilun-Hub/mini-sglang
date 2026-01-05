@@ -29,7 +29,7 @@ class AttentionLayer(StateLessOP):
         assert num_qo_heads % num_kv_heads == 0
         self.layer_id = layer_id
         self.head_dim = head_dim
-        tp_size = get_tp_info().size
+        tp_size = get_tp_info().local_size
         self.num_qo_heads = divide_even(num_qo_heads, tp_size)
         self.num_kv_heads = divide_even(num_kv_heads, tp_size)
         self.qo_attn_dim = self.num_qo_heads * head_dim

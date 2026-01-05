@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 
 class Qwen3DecoderLayer(BaseOP):
-    def __init__(self, config: ModelConfig, layer_id: int):
-        self.self_attn = Qwen3Attn(config, layer_id, has_qk_norm=True)
+    def __init__(self, config: ModelConfig, layer_id: int, group: torch.distributed.ProcessGroup):
+        self.self_attn = Qwen3Attn(config, layer_id, has_qk_norm=True, group=group)
         self.mlp = Qwen3MLP(config)
         self.input_layernorm = RMSNormFused(
             size=config.hidden_size,
@@ -42,13 +42,14 @@ class Qwen3DecoderLayer(BaseOP):
 
 
 class Qwen3Model(BaseOP):
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: ModelConfig, group: torch.distributed.ProcessGroup):
         self.embed_tokens = VocabParallelEmbedding(
             num_embeddings=config.vocab_size,
             embedding_dim=config.hidden_size,
+            group=group,
         )
         self.layers = OPList(
-            [Qwen3DecoderLayer(config, layer_id) for layer_id in range(config.num_layers)]
+            [Qwen3DecoderLayer(config, layer_id, group=group) for layer_id in range(config.num_layers)]
         )
         self.norm = RMSNormFused(
             size=config.hidden_size,
@@ -64,13 +65,14 @@ class Qwen3Model(BaseOP):
 
 
 class Qwen3ForCausalLM(BaseLLMModel):
-    def __init__(self, config: ModelConfig):
-        self.model = Qwen3Model(config)
+    def __init__(self, config: ModelConfig, group: torch.distributed.ProcessGroup):
+        self.model = Qwen3Model(config, group=group)
         self.lm_head = ParallelLMHead(
             num_embeddings=config.vocab_size,
             embedding_dim=config.hidden_size,
             tie_word_embeddings=config.tie_word_embeddings,
             tied_embedding=self.model.embed_tokens if config.tie_word_embeddings else None,
+            group=group,
         )
         super().__init__()
 

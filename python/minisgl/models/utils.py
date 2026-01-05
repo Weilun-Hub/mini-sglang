@@ -20,11 +20,12 @@ if TYPE_CHECKING:
 
 
 class GatedMLP(BaseOP):
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: ModelConfig, group: torch.distributed.ProcessGroup):
         self.gate_up_proj = LinearColParallelMerged(
             config.hidden_size,
             [config.intermediate_size, config.intermediate_size],
             has_bias=False,
+            group=group,
         )
 
         match config.hidden_act:
@@ -37,6 +38,7 @@ class GatedMLP(BaseOP):
             config.intermediate_size,
             config.hidden_size,
             has_bias=False,
+            group=group,
         )
 
     @nvtx_annotate("MLP")
@@ -53,6 +55,7 @@ class RopeAttn(BaseOP):
         self,
         config: ModelConfig,
         layer_id: int,
+        group: torch.distributed.ProcessGroup,
         *,
         has_attn_bias: bool = False,
         has_qk_norm: bool = False,
@@ -64,6 +67,7 @@ class RopeAttn(BaseOP):
             num_qo_heads=config.num_qo_heads,
             num_kv_heads=config.num_kv_heads,
             has_bias=has_attn_bias,
+            group=group,
         )
         self.has_qk_norm = has_qk_norm
         if has_qk_norm:
@@ -85,6 +89,7 @@ class RopeAttn(BaseOP):
             head_dim * config.num_qo_heads,
             config.hidden_size,
             has_bias=False,
+            group=group,
         )
 
     @nvtx_annotate("MHA")

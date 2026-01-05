@@ -39,6 +39,28 @@ class TorchDistributedImpl(DistributedImpl):
         out = torch.empty(shape, dtype=x.dtype, device=x.device)
         dist.all_gather_into_tensor(out, x)
         return out
+    
+@dataclass
+class CustomTorchDistributedImpl(DistributedImpl):
+    def __init__(self, group: dist.ProcessGroup):
+        self.group = group
+    
+    def all_reduce(self, x: torch.Tensor) -> torch.Tensor:
+        tp_size = dist.get_world_size(group=self.group)
+        if tp_size == 1:
+            return x
+        dist.all_reduce(x, op=dist.ReduceOp.SUM, group=self.group)
+        return x
+
+    def all_gather(self, x: torch.Tensor) -> torch.Tensor:
+        tp_size = dist.get_world_size(group=self.group)
+        if tp_size == 1:
+            return x
+        shape = list(x.shape)
+        shape[0] = shape[0] * tp_size
+        out = torch.empty(shape, dtype=x.dtype, device=x.device)
+        dist.all_gather_into_tensor(out, x, group=self.group)
+        return out
 
 
 @dataclass

@@ -16,18 +16,19 @@ class VocabParallelEmbedding(BaseOP):
         self,
         num_embeddings: int,
         embedding_dim: int,
+        group: torch.distributed.ProcessGroup,
     ):
         super().__init__()
         tp_info = get_tp_info()
-        tp_rank = tp_info.rank
-        self.tp_size = tp_info.size
+        tp_rank = tp_info.local_rank
+        self.tp_size = tp_info.local_size
         self.num_embeddings = num_embeddings
         self.num_embeddings_tp = divide_up(num_embeddings, self.tp_size)
         start_idx = self.num_embeddings_tp * tp_rank
         finish_idx = min(start_idx + self.num_embeddings_tp, num_embeddings)
         self.vocab_range = (start_idx, finish_idx - start_idx)
         self.weight = torch.empty(self.num_embeddings_tp, embedding_dim)
-        self._comm = DistributedCommunicator()
+        self._comm = DistributedCommunicator(group)
 
     @nvtx_annotate("Embedding")
     def forward(self, x: torch.Tensor) -> torch.Tensor:

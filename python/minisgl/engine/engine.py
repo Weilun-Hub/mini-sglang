@@ -57,10 +57,10 @@ class Engine:
         with torch.device("meta"), torch_dtype(config.dtype):
             if self.role == Role.TARGET:
                 logger.info_rank0(f"Creating {self.role.value} model on meta device")
-                self.model = create_model(config.target_model_path, config.model_config)
+                self.model = create_model(config.target_model_path, config.model_config, group=self.sd_group)
             else:
                 logger.info_rank0(f"Creating {self.role.value} model on meta device")
-                self.model = create_model(config.draft_model_path, config.model_config)
+                self.model = create_model(config.draft_model_path, config.model_config, group=self.sd_group)
         self.model.load_state_dict(self._load_weight_state_dict(config))
         logger.info(f"Rank {torch.distributed.get_rank()}: About to barrier after model loading")
         try:

@@ -20,6 +20,7 @@ class _LinearTPImpl(BaseOP):
         local_isize: int,
         local_osize: int,
         has_bias: bool,
+        group: torch.distributed.ProcessGroup,
     ):
         self.full_input_size = full_isize
         self.full_output_size = full_osize
@@ -27,6 +28,7 @@ class _LinearTPImpl(BaseOP):
         self.local_output_size = local_osize
         self.weight = torch.empty(local_osize, local_isize)
         self.bias = torch.empty(local_osize) if has_bias else None
+        self.group = group
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return F.linear(x, self.weight, self.bias)
@@ -38,13 +40,14 @@ class LinearColParallelMerged(_LinearTPImpl):
         input_size: int,
         output_sizes: List[int],
         has_bias: bool,
+        group: torch.distributed.ProcessGroup,
     ):
         # check that all output sizes are divisible by tp_size
         tp_info = get_tp_info()
-        tp_output_sizes = [divide_even(size, tp_info.size) for size in output_sizes]
+        tp_output_sizes = [divide_even(size, tp_info.local_size) for size in output_sizes]
         output_size = sum(output_sizes)
         tp_output_size = sum(tp_output_sizes)
-        super().__init__(input_size, output_size, input_size, tp_output_size, has_bias)
+        super().__init__(input_size, output_size, input_size, tp_output_size, has_bias, group)
 
 
 class LinearQKVMerged(_LinearTPImpl):
@@ -55,28 +58,29 @@ class LinearQKVMerged(_LinearTPImpl):
         num_qo_heads: int,
         num_kv_heads: int,
         has_bias: bool,
+        group: torch.distributed.ProcessGroup,
     ):
         tp_info = get_tp_info()
 
         GQA_ratio = divide_even(num_qo_heads, num_kv_heads)
-        local_num_kv = divide_even(num_kv_heads, tp_info.size)
+        local_num_kv = divide_even(num_kv_heads, tp_info.local_size)
         full_isize = hidden_size
         full_osize = (GQA_ratio + 2) * num_kv_heads * head_dim
         local_isize = hidden_size
         local_osize = (GQA_ratio + 2) * local_num_kv * head_dim
-        super().__init__(full_isize, full_osize, local_isize, local_osize, has_bias)
+        super().__init__(full_isize, full_osize, local_isize, local_osize, has_bias, group)
 
 
 class LinearOProj(_LinearTPImpl):
-    def __init__(self, input_size: int, output_size: int, has_bias: bool):
+    def __init__(self, input_size: int, output_size: int, has_bias: bool, group: torch.distributed.ProcessGroup):
         tp_info = get_tp_info()
         full_isize = input_size
         full_osize = output_size
-        local_isize = divide_even(input_size, tp_info.size)
+        local_isize = divide_even(input_size, tp_info.local_size)
         local_osize = output_size
-        self._comm = DistributedCommunicator()
-        self._tp_size = tp_info.size
-        super().__init__(full_isize, full_osize, local_isize, local_osize, has_bias)
+        self._comm = DistributedCommunicator(group)
+        self._tp_size = tp_info.local_size
+        super().__init__(full_isize, full_osize, local_isize, local_osize, has_bias, group)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = F.linear(x, self.weight, self.bias)
@@ -91,13 +95,14 @@ class LinearRowParallel(_LinearTPImpl):
         input_size: int,
         output_size: int,
         has_bias: bool,
+        group: torch.distributed.ProcessGroup,
     ):
         tp_info = get_tp_info()
-        local_input_size = divide_even(input_size, tp_info.size)
+        local_input_size = divide_even(input_size, tp_info.local_size)
         local_output_size = output_size
-        self._comm = DistributedCommunicator()
-        self._tp_size = tp_info.size
-        super().__init__(input_size, output_size, local_input_size, local_output_size, has_bias)
+        self._comm = DistributedCommunicator(group)
+        self._tp_size = tp_info.local_size
+        super().__init__(input_size, output_size, local_input_size, local_output_size, has_bias, group)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = F.linear(x, self.weight, self.bias)
