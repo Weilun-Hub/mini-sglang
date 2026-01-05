@@ -246,7 +246,9 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
             kwargs["dtype"] = dtype_or_str
 
     kwargs["tp_info"] = DistributedInfo(0, kwargs["target_tensor_parallel_size"] + kwargs["draft_tensor_parallel_size"], Role.TARGET, 0, kwargs["target_tensor_parallel_size"])
-    
+    del kwargs["target_tensor_parallel_size"]
+    del kwargs["draft_tensor_parallel_size"]
+
     result = ServerArgs(**kwargs)
     logger = init_logger(__name__)
     logger.info(f"Parsed arguments:\n{result}")
