@@ -27,14 +27,13 @@ def _run_scheduler(args: ServerArgs, ack_queue: mp.Queue[str]) -> None:
         if args.silent_output:
             logging.disable(logging.INFO)
 
-        logger = init_logger(__name__)
-        if scheduler.tp_info.is_primary():
-            print()  # for a clean newline after ^C
-            logger.info("Scheduler exiting gracefully...")
-        scheduler.shutdown()
+        # debug
+        # logger = init_logger(__name__)
+        # if scheduler.tp_info.is_primary():
+        #     print()  # for a clean newline after ^C
+        #     logger.info("Scheduler exiting gracefully...")
+        # scheduler.shutdown()
 
-        '''
-        [WIP]
         try:
             scheduler.run_forever()
         except KeyboardInterrupt:
@@ -43,7 +42,6 @@ def _run_scheduler(args: ServerArgs, ack_queue: mp.Queue[str]) -> None:
                 print()  # for a clean newline after ^C
                 logger.info("Scheduler exiting gracefully...")
             scheduler.shutdown()
-        '''
 
 
 def launch_server(run_shell: bool = False) -> None:
@@ -122,11 +120,11 @@ def launch_server(run_shell: bool = False) -> None:
             ).start()
 
         # Wait for acknowledgments from all worker processes:
-        # - world_size schedulers (but only primary rank sends ack)
+        # - world_size schedulers (but only primary target and draft rank send ack)
         # - num_tokenizers tokenizers
         # - 1 detokenizer
-        # Total acks expected: 1 + num_tokenizers + 1 = num_tokenizers + 2
-        for _ in range(num_tokenizers + 2):
+        # Total acks expected: 2 + num_tokenizers + 1 = num_tokenizers + 3
+        for _ in range(num_tokenizers + 3):
             logger.info(ack_queue.get())
 
     run_api_server(server_args, start_subprocess, run_shell=run_shell)
