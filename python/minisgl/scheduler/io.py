@@ -32,7 +32,7 @@ class SchedulerIOMixin:
             self.send_result = self.offline_send_result
             return  # early exit
 
-        if tp_info.is_primary():
+        if tp_info.rank == 0:
             self._recv_from_tokenizer: Final = ZmqPullQueue(
                 config.zmq_backend_addr,
                 create=True,
@@ -47,7 +47,7 @@ class SchedulerIOMixin:
         recv = self._recv_msg_single_rank
         send = self._reply_tokenizer_rank0
         if tp_info.size > 1:
-            if tp_info.is_primary():
+            if tp_info.rank == 0:
                 recv = self._recv_msg_multi_rank0
                 self._send_into_ranks: Final = ZmqPubQueue(
                     config.zmq_scheduler_broadcast_addr, create=True, encoder=BaseBackendMsg.encoder

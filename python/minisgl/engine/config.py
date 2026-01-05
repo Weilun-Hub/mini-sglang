@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, List
 
 import torch
-from minisgl.distributed import DistributedInfo
+from minisgl.distributed import DistributedInfo, Role
 from minisgl.utils import cached_load_hf_config
 
 if TYPE_CHECKING:
@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class EngineConfig:
-    model_path: str
+    target_model_path: str
+    draft_model_path: str
     tp_info: DistributedInfo
     dtype: torch.dtype
     max_running_req: int = 256
@@ -25,13 +26,16 @@ class EngineConfig:
     memory_ratio: float = 0.9
     distributed_timeout: float = 60.0
     use_dummy_weight: bool = False
-    use_pynccl: bool = True
+    # use_pynccl: bool = True
     max_seq_len_override: int | None = None
     num_page_override: int | None = None  # if not None, will override the number of pages
 
     @cached_property
     def hf_config(self):
-        return cached_load_hf_config(self.model_path)
+        if self.tp_info.role == Role.TARGET:
+            return cached_load_hf_config(self.target_model_path)
+        else:
+            return cached_load_hf_config(self.draft_model_path)
 
     @cached_property
     def model_config(self) -> ModelConfig:

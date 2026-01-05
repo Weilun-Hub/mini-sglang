@@ -9,7 +9,7 @@ import torch
 from minisgl.distributed import DistributedInfo
 from minisgl.scheduler import SchedulerConfig
 from minisgl.utils import cached_load_hf_config, init_logger
-
+from minisgl.distributed.info import Role
 
 @dataclass(frozen=True)
 class ServerArgs(SchedulerConfig):
@@ -67,10 +67,17 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
     parser = argparse.ArgumentParser(description="MiniSGL Server Arguments")
 
     parser.add_argument(
-        "--model-path",
+        "--target-model-path",
         type=str,
         required=True,
-        help="The path of the model weights. This can be a local folder or a Hugging Face repo ID.",
+        help="The path of the target model weights. This can be a local folder or a Hugging Face repo ID.",
+    )
+
+    parser.add_argument(
+        "--draft-model-path",
+        type=str,
+        required=True,
+        help="The path of the draft model weights. This can be a local folder or a Hugging Face repo ID.",
     )
 
     parser.add_argument(
@@ -82,11 +89,19 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
     )
 
     parser.add_argument(
-        "--tensor-parallel-size",
-        "--tp-size",
+        "--target-tensor-parallel-size",
+        "--target-tp-size",
         type=int,
         default=1,
-        help="The tensor parallelism size.",
+        help="The target tensor parallelism size.",
+    )
+
+    parser.add_argument(
+        "--draft-tensor-parallel-size",
+        "--draft-tp-size",
+        type=int,
+        default=1,
+        help="The draft tensor parallelism size.",
     )
 
     parser.add_argument(
@@ -119,13 +134,13 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         help="Use dummy weights for testing.",
     )
 
-    assert ServerArgs.use_pynccl == True
-    parser.add_argument(
-        "--disable-pynccl",
-        action="store_false",
-        dest="use_pynccl",
-        help="Disable PyNCCL for tensor parallelism.",
-    )
+    # assert ServerArgs.use_pynccl == True
+    # parser.add_argument(
+    #     "--disable-pynccl",
+    #     action="store_false",
+    #     dest="use_pynccl",
+    #     help="Disable PyNCCL for tensor parallelism.",
+    # )
 
     parser.add_argument(
         "--host",
@@ -210,8 +225,11 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         kwargs["max_running_req"] = 1
         kwargs["silent_output"] = True
 
-    if kwargs["model_path"].startswith("~"):
-        kwargs["model_path"] = os.path.expanduser(kwargs["model_path"])
+    if kwargs["target_model_path"].startswith("~"):
+        kwargs["target_model_path"] = os.path.expanduser(kwargs["target_model_path"])
+
+    if kwargs["draft_model_path"].startswith("~"):
+        kwargs["draft_model_path"] = os.path.expanduser(kwargs["draft_model_path"])
 
     DTYPE_MAP = {
         "float16": torch.float16,
@@ -221,15 +239,14 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
     if (dtype_str := kwargs["dtype"]) != "auto":
         kwargs["dtype"] = DTYPE_MAP[dtype_str]
     else:
-        dtype_or_str = cached_load_hf_config(kwargs["model_path"]).dtype
+        dtype_or_str = cached_load_hf_config(kwargs["target_model_path"]).dtype
         if isinstance(dtype_or_str, str):
             kwargs["dtype"] = DTYPE_MAP[dtype_or_str]
         else:
             kwargs["dtype"] = dtype_or_str
 
-    kwargs["tp_info"] = DistributedInfo(0, kwargs["tensor_parallel_size"])
-    del kwargs["tensor_parallel_size"]
-
+    kwargs["tp_info"] = DistributedInfo(0, kwargs["target_tensor_parallel_size"] + kwargs["draft_tensor_parallel_size"], Role.TARGET, 0, kwargs["target_tensor_parallel_size"])
+    
     result = ServerArgs(**kwargs)
     logger = init_logger(__name__)
     logger.info(f"Parsed arguments:\n{result}")

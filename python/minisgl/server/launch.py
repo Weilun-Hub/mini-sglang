@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from minisgl.distributed import DistributedInfo
 from minisgl.utils import init_logger
+from minisgl.distributed.info import Role
 
 if TYPE_CHECKING:
     from .args import ServerArgs
@@ -22,11 +23,18 @@ def _run_scheduler(args: ServerArgs, ack_queue: mp.Queue[str]) -> None:
         scheduler.sync_all_ranks()
 
         if args.tp_info.is_primary():
-            ack_queue.put("Scheduler is ready")
-
+            ack_queue.put(f"{args.tp_info.role.value} scheduler is ready")
         if args.silent_output:
             logging.disable(logging.INFO)
 
+        logger = init_logger(__name__)
+        if scheduler.tp_info.is_primary():
+            print()  # for a clean newline after ^C
+            logger.info("Scheduler exiting gracefully...")
+        scheduler.shutdown()
+
+        '''
+        [WIP]
         try:
             scheduler.run_forever()
         except KeyboardInterrupt:
@@ -35,6 +43,7 @@ def _run_scheduler(args: ServerArgs, ack_queue: mp.Queue[str]) -> None:
                 print()  # for a clean newline after ^C
                 logger.info("Scheduler exiting gracefully...")
             scheduler.shutdown()
+        '''
 
 
 def launch_server(run_shell: bool = False) -> None:
@@ -51,21 +60,31 @@ def launch_server(run_shell: bool = False) -> None:
 
         mp.set_start_method("spawn", force=True)
 
-        world_size = server_args.tp_info.size
+        target_size = server_args.target_tp_info.size
+        draft_size = server_args.draft_tp_info.size
+        world_size = target_size + draft_size
+        logger.info(f"Launching {world_size} = #target + #draft = {target_size} + {draft_size} scheduler subprocesses")
+        
         # a multiprocessing queue to receive ack from subprocesses
         # so that we can guarantee all subprocesses are ready
         ack_queue: mp.Queue[str] = mp.Queue()
 
         for i in range(world_size):
+
+            role = Role.TARGET if i < target_size else Role.DRAFT
+            local_rank = i if i < target_size else i - target_size
+
             new_args = replace(
                 server_args,
-                tp_info=DistributedInfo(i, world_size),
+                tp_info=DistributedInfo(i, world_size, role, local_rank, target_size if role == Role.TARGET else draft_size),
             )
+
+            logger.info(f"Starting scheduler subprocess for TP rank {i} / {world_size} : role={role}, local_rank={local_rank}")
             mp.Process(
                 target=_run_scheduler,
                 args=(new_args, ack_queue),
                 daemon=False,
-                name=f"minisgl-TP{i}-scheduler",
+                name=f"minisgl-TP{i}-{role.value}{local_rank}-scheduler",
             ).start()
 
         num_tokenizers = server_args.num_tokenizer
