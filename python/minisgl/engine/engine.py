@@ -145,13 +145,13 @@ class Engine:
         )
         tp_cpu_group = torch.distributed.new_group(backend="gloo")
 
-        target_devices = list(range(0, config.tp_info.target_size))
-        draft_devices = list(range(config.tp_info.target_size, config.tp_info.size))
+        target_devices = list(range(0, config.target_tp_size))
+        draft_devices = list(range(config.target_tp_size, config.tp_info.size))
         verify_devices = target_devices + [draft_devices[0]]
         target_group = torch.distributed.new_group(target_devices)
         draft_group = torch.distributed.new_group(draft_devices)
         verify_group = torch.distributed.new_group(verify_devices)
-        if config.tp_info.group_name == "target":
+        if config.tp_info.role == Role.TARGET:
             sd_group = target_group
         else:
             sd_group = draft_group
