@@ -79,7 +79,7 @@ class GraphRunner:
             return graph_map
 
         tp_info = get_tp_info()
-        use_dist_barrier = tp_info.tp_size > 1 and torch.distributed.is_initialized()
+        use_dist_barrier = tp_info.size > 1 and torch.distributed.is_initialized()
         if use_dist_barrier:
             logger.info_rank0("Multi-rank detect: synchronizing before capturing CUDA graphs...")
             torch.distributed.barrier()
