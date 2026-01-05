@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Qwen3DecoderLayer(BaseOP):
     def __init__(self, config: ModelConfig, layer_id: int, group: torch.distributed.ProcessGroup):
         self.self_attn = Qwen3Attn(config, layer_id, has_qk_norm=True, group=group)
-        self.mlp = Qwen3MLP(config)
+        self.mlp = Qwen3MLP(config, group=group)
         self.input_layernorm = RMSNormFused(
             size=config.hidden_size,
             eps=config.rms_norm_eps,
