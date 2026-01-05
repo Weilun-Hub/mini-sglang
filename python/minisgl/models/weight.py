@@ -20,8 +20,8 @@ class DisabledTqdm(tqdm):
 def _shard_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     shard_state_dict: Dict[str, torch.Tensor] = {}
     tp_info = get_tp_info()
-    r = tp_info.rank
-    n = tp_info.size
+    r = tp_info.local_rank
+    n = tp_info.local_size
     SPLIT_DIM_0_LIST = [
         ".q_proj",
         ".k_proj",
@@ -98,7 +98,7 @@ def load_hf_weight(model_path: str, device: torch.device) -> Dict[str, torch.Ten
             for name in f.keys():
                 state_dict[name] = f.get_tensor(name)
 
-    if get_tp_info().size > 1:
+    if get_tp_info().local_size > 1:
         state_dict = _shard_state_dict(state_dict)
 
     state_dict = {k: v.to(device) for k, v in state_dict.items()}
