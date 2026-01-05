@@ -82,7 +82,11 @@ class GraphRunner:
         use_dist_barrier = tp_info.size > 1 and torch.distributed.is_initialized()
         if use_dist_barrier:
             logger.info_rank0("Multi-rank detect: synchronizing before capturing CUDA graphs...")
-            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            try:
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            except RuntimeError as e:
+                logger.error(f"Distributed barrier failed before graph capture: {e}")
+                raise
 
         self.logits = torch.empty(
             (self.max_graph_bs, vocab_size),
@@ -110,9 +114,7 @@ class GraphRunner:
             free_memory = get_free_memory(self.device)
             pbar.desc = f"Capturing graphs: bs = {bs:<3} | avail_mem = {mem_GB(free_memory)}"
             pbar.refresh()
-            if use_dist_barrier:
-                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            
+
             graph = torch.cuda.CUDAGraph()
             batch = Batch(reqs=[self.dummy_req] * bs, phase="decode")
             self.attn_backend.prepare_for_capture(batch)
@@ -123,6 +125,15 @@ class GraphRunner:
             if pool is None:
                 pool = graph.pool()
             graph_map[bs] = graph
+
+        # Final synchronization barrier to ensure all ranks completed graph capture
+        if use_dist_barrier:
+            logger.info_rank0("Synchronizing after CUDA graph capture completion...")
+            try:
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            except RuntimeError as e:
+                logger.error(f"Distributed barrier failed after graph capture: {e}")
+                raise
 
         free_memory = get_free_memory(self.device)
         logger.info_rank0(f"Free GPU memory after capturing CUDA graphs: {mem_GB(free_memory)}")

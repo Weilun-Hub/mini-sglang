@@ -26,7 +26,7 @@ class EngineConfig:
     cuda_graph_max_bs: int | None = None
     page_size: int = 1
     memory_ratio: float = 0.9
-    distributed_timeout: float = 60.0
+    distributed_timeout: float = 300.0  # Increased from 60.0 to handle CUDA graph capture timeouts
     use_dummy_weight: bool = False
     # use_pynccl: bool = True
     max_seq_len_override: int | None = None
