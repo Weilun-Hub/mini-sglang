@@ -296,3 +296,8 @@ class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
         assert config.tp_info.role == Role.DRAFT
         super().__init__(config)
+        
+        # [TODO] set gamma for draft scheduler
+        self.gamma = 3
+
+        

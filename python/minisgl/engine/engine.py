@@ -277,7 +277,6 @@ class Engine:
 class DraftEngine(Engine):
     def __init__(self, config: EngineConfig):
         super().__init__(config)
-        self.gamma = 3
         logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
