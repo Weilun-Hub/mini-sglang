@@ -285,3 +285,14 @@ class Scheduler(SchedulerIOMixin):
         torch.cuda.synchronize(self.device)
         self.sync_all_ranks()
         self.engine.shutdown()
+
+
+class TargetScheduler(Scheduler):
+    def __init__(self, config: SchedulerConfig):
+        assert config.tp_info.role == Role.TARGET
+        super().__init__(config)
+
+class DraftScheduler(Scheduler):
+    def __init__(self, config: SchedulerConfig):
+        assert config.tp_info.role == Role.DRAFT
+        super().__init__(config)

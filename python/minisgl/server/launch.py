@@ -16,10 +16,13 @@ if TYPE_CHECKING:
 
 def _run_scheduler(args: ServerArgs, ack_queue: mp.Queue[str]) -> None:
     import torch
-    from minisgl.scheduler import Scheduler
+    from minisgl.scheduler import Scheduler, TargetScheduler, DraftScheduler
 
     with torch.inference_mode():
-        scheduler = Scheduler(args)
+        if args.tp_info.role == Role.TARGET:
+            scheduler = TargetScheduler(args)
+        else:
+            scheduler = DraftScheduler(args)
         scheduler.sync_all_ranks()
 
         if args.tp_info.is_primary():
