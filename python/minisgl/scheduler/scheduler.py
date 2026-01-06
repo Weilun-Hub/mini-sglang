@@ -24,6 +24,8 @@ from .io import SchedulerIOMixin
 from .prefill import ChunkedReq, PrefillManager
 from .table import TableManager
 
+from minisgl.distributed.info import Role
+
 if TYPE_CHECKING:
     from minisgl.engine import BatchSamplingArgs, ForwardOutput
 
@@ -79,9 +81,11 @@ ForwardData: TypeAlias = "Tuple[ForwardInput, ForwardOutput]"
 
 class Scheduler(SchedulerIOMixin):
     def __init__(self, config: SchedulerConfig):
-        from minisgl.engine import Engine
-
-        self.engine = Engine(config)
+        from minisgl.engine import Engine, DraftEngine, TargetEngine
+        if config.tp_info.role == Role.TARGET:
+            self.engine = TargetEngine(config)
+        else:
+            self.engine = DraftEngine(config)
         # Initialize the I/O mixin
         super().__init__(config, self.engine.tp_cpu_group)
 
