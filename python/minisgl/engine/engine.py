@@ -281,7 +281,10 @@ class DraftEngine(Engine):
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
-            return super().forward_batch(batch, args)
+            forward_output = super().forward_batch(batch, args)
+            logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
+            torch.distributed.barrier()
+            return forward_output
 
         # assert torch.cuda.current_stream() == self.stream
         # with self.ctx.forward_batch(batch):
@@ -306,7 +309,10 @@ class TargetEngine(Engine):
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
-            return super().forward_batch(batch, args)
+            forward_output = super().forward_batch(batch, args)
+            logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
+            torch.distributed.barrier()
+            return forward_output
         
         # assert torch.cuda.current_stream() == self.stream
         # with self.ctx.forward_batch(batch):
