@@ -125,6 +125,8 @@ class Scheduler(SchedulerIOMixin):
             if req in self.finished_reqs or isinstance(req, ChunkedReq):
                 continue
 
+            logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req{i}: next_token_id{next_tokens_cpu[i]}")
+            
             next_token_id = next_tokens_cpu[i]
             req.append_host(next_token_id.unsqueeze(0))
             next_token = int(next_token_id.item())
@@ -300,4 +302,3 @@ class DraftScheduler(Scheduler):
         # [TODO] set gamma for draft scheduler
         self.gamma = 3
 
-        
