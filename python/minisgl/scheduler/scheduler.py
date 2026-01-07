@@ -315,7 +315,7 @@ class TargetScheduler(Scheduler):
                 ongoing_data = (forward_input, self._forward(forward_input))
 
             self._process_last_data(ongoing_data, None)
-            torch.distributed.barrier(device_ids=[self.device])
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
 class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
@@ -345,6 +345,6 @@ class DraftScheduler(Scheduler):
                     ongoing_data = (forward_input, self._forward(forward_input))
                 self._process_last_data(ongoing_data, None)
                 forward_input = self._schedule_next_batch()
-                torch.distributed.barrier(device_ids=[self.device])
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
 
