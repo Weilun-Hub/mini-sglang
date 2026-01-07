@@ -121,7 +121,7 @@ class Engine:
         )
 
         logger.info(f"Rank {torch.distributed.get_rank()}: About to final barrier after engine initialization")
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
     def _init_communication(self, config: EngineConfig) -> torch.distributed.ProcessGroup:
         # if config.tp_info.size == 1 or config.use_pynccl:
@@ -283,7 +283,7 @@ class DraftEngine(Engine):
         if batch.phase == "prefill":
             forward_output = super().forward_batch(batch, args)
             logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
-            torch.distributed.barrier()
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return forward_output
 
         # assert torch.cuda.current_stream() == self.stream
@@ -311,7 +311,7 @@ class TargetEngine(Engine):
         if batch.phase == "prefill":
             forward_output = super().forward_batch(batch, args)
             logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
-            torch.distributed.barrier()
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return forward_output
         
         # assert torch.cuda.current_stream() == self.stream

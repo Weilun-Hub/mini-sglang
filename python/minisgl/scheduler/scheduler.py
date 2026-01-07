@@ -125,7 +125,7 @@ class Scheduler(SchedulerIOMixin):
             if req in self.finished_reqs or isinstance(req, ChunkedReq):
                 continue
 
-            logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req{i}: next_token_id{next_tokens_cpu[i]}")
+            logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {i}: next_token_id {next_tokens_cpu[i]}")
 
             next_token_id = next_tokens_cpu[i]
             req.append_host(next_token_id.unsqueeze(0))
