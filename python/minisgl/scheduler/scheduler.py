@@ -126,7 +126,7 @@ class Scheduler(SchedulerIOMixin):
                 continue
 
             logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req{i}: next_token_id{next_tokens_cpu[i]}")
-            
+
             next_token_id = next_tokens_cpu[i]
             req.append_host(next_token_id.unsqueeze(0))
             next_token = int(next_token_id.item())
@@ -223,6 +223,7 @@ class Scheduler(SchedulerIOMixin):
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         self._load_token_ids(forward_input)
         batch, sample_args = forward_input.batch, forward_input.sample_args
+        logger.info(f"{torch.distributed.get_rank()} Starting forward for batch with reqs {[req.uid for req in batch.reqs]} : {batch.input_ids}")
         forward_output = self.engine.forward_batch(batch, sample_args)
         self._write_token_ids(forward_input, forward_output)
         self.decode_manager.add_reqs(forward_input.batch.reqs)
