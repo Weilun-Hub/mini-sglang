@@ -301,13 +301,14 @@ class TargetScheduler(Scheduler):
             self._process_one_msg(msg)
 
         forward_input = self._schedule_next_batch()
-        if forward_input.phase == "prefill":
+        phase = None if forward_input is None else forward_input.batch.phase
+        if phase == "prefill":
             ongoing_data = None
             if forward_input is not None:
                 ongoing_data = (forward_input, self._forward(forward_input))
 
             self._process_last_data(ongoing_data, None)
-        elif forward_input.phase == "decode":
+        elif phase == "decode":
             logger.info(f"{torch.distributed.get_rank()} TargetScheduler decode phase")
             ongoing_data = None
             if forward_input is not None:
@@ -330,12 +331,13 @@ class DraftScheduler(Scheduler):
             self._process_one_msg(msg)
 
         forward_input = self._schedule_next_batch()
-        if forward_input.phase == "prefill":
+        phase = None if forward_input is None else forward_input.batch.phase
+        if phase == "prefill":
             ongoing_data = None
             if forward_input is not None:
                 ongoing_data = (forward_input, self._forward(forward_input))
             self._process_last_data(ongoing_data, None)
-        elif forward_input.phase == "decode":
+        elif phase == "decode":
             logger.info(f"{torch.distributed.get_rank()} DraftScheduler decode phase")
             for _ in range(self.gamma):
                 ongoing_data = None
