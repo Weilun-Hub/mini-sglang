@@ -107,6 +107,7 @@ class Engine:
             uid=-1,
             sampling_params=None,  # type: ignore
             cache_handle=None,  # type: ignore
+            pre_verify=True,
         )
         self.page_table[self.dummy_req.table_idx].fill_(self.dummy_page)
         self.graph_runner = GraphRunner(
