@@ -304,6 +304,32 @@ class DraftScheduler(Scheduler):
         assert config.tp_info.role == Role.DRAFT
         super().__init__(config)
         self.gamma = 3
+    
+    def _process_one_msg(self, msg: BaseBackendMsg) -> None:
+        if isinstance(msg, BatchBackendMsg):
+            for msg in msg.data:
+                self._process_one_msg(msg)
+        elif isinstance(msg, ExitMsg):
+            raise KeyboardInterrupt
+        elif isinstance(msg, UserMsg):
+            logger.debug_rank0("Received user msg: %s", msg)
+            input_len, max_seq_len = len(msg.input_ids), self.engine.max_seq_len
+            if input_len >= max_seq_len:
+                return logger.warning_rank0(
+                    f"Input sequence len {input_len} exceeds {max_seq_len}, "
+                    f"request {msg.uid} is dropped."
+                )
+            max_output_len = max_seq_len - input_len
+            if msg.sampling_params.max_tokens + self.gamma > max_output_len:
+                msg.sampling_params.max_tokens = max_output_len - self.gamma
+                logger.warning_rank0(
+                    f"Adjust max_tokens to {max_output_len - self.gamma} for request {msg.uid}."
+                )
+            msg.sampling_params.max_tokens += self.gamma
+            self.prefill_manager.add_one_req(msg)
+        else:
+            logger.error(f"Unknown message type: {type(msg)}")
+            raise NotImplementedError
 
     def _prepare_batch(self, batch: Batch) -> ForwardInput:
         logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with reqs {[r.extend_len for r in batch.reqs]}")
