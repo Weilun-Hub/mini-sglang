@@ -294,6 +294,7 @@ class DraftEngine(Engine):
             next_tokens_gpu = torch.empty((batch.size, self.gamma), dtype=torch.int32, device=self.device)
             for i in range(0, self.gamma):
                 cur_batch.out_loc = batch.out_loc[i::self.gamma]
+                cur_batch.input_ids = batch.input_ids[i::self.gamma]
 
                 self.attn_backend.prepare_metadata(cur_batch)
 
