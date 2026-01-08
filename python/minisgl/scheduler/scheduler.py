@@ -413,7 +413,7 @@ class DraftScheduler(Scheduler):
         if forward_input.batch.phase == "prefill":
             return super()._forward(forward_input)
         elif forward_input.batch.phase == "decode":
-            # return super()._forward(forward_input)
+            return super()._forward(forward_input)
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
                 batch, sample_args = forward_input.batch, forward_input.sample_args
