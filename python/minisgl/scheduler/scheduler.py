@@ -138,6 +138,7 @@ class Scheduler(SchedulerIOMixin):
                 logger.warning_rank0(f"Request {req.uid} reached {max_seq_len = }, dropped.")
             reply.data.append(DetokenizeMsg(uid=req.uid, next_token=next_token, finished=finished))
 
+            logger.info(f"{torch.distributed.get_rank()} Request {req.uid} appended next_token {next_token}, finished: {finished}")
             # free resources if the req is finished and not ongoing
             if finished:
                 self.finished_reqs.add(req)
