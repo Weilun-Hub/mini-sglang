@@ -421,7 +421,7 @@ class DraftScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} find hang point after forward_batch 1")
                 self._write_token_ids(forward_input, forward_output)
                 logger.info(f"{torch.distributed.get_rank()} forward_batch {forward_input.batch.phase} completed")
-                forward_output.copy_done.synchronize()
+                forward_output.copy_done_event.synchronize()
                 forward_input = self._prepare_batch(batch)
 
 
