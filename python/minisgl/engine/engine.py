@@ -275,7 +275,7 @@ class DraftEngine(Engine):
             copy_done_event = torch.cuda.Event()
             copy_done_event.record()
             
-            logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
+            logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch prefill completed")
             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
         elif batch.phase == "decode":
@@ -306,7 +306,7 @@ class TargetEngine(Engine):
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
             forward_output = super().forward_batch(batch, args)
-            logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
+            logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed")
             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return forward_output
         elif batch.phase == "decode":

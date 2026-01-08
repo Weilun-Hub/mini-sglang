@@ -226,10 +226,11 @@ class Scheduler(SchedulerIOMixin):
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         self._load_token_ids(forward_input)
         batch, sample_args = forward_input.batch, forward_input.sample_args
-        logger.info(f"{torch.distributed.get_rank()} Starting forward for batch with reqs {[req.uid for req in batch.reqs]} : {batch.input_ids}")
+        logger.info(f"{torch.distributed.get_rank()} Starting forward for {batch.phase}: {batch.input_ids}")
         forward_output = self.engine.forward_batch(batch, sample_args)
         self._write_token_ids(forward_input, forward_output)
         self.decode_manager.add_reqs(forward_input.batch.reqs)
+        logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch {forward_input.batch.phase} completed")
         return forward_output
 
     def run_when_idle(self) -> None:
