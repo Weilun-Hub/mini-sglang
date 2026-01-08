@@ -413,6 +413,7 @@ class DraftScheduler(Scheduler):
         if forward_input.batch.phase == "prefill":
             return super()._forward(forward_input)
         elif forward_input.batch.phase == "decode":
+            return super()._forward(forward_input)
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
                 batch, sample_args = forward_input.batch, forward_input.sample_args
@@ -424,5 +425,5 @@ class DraftScheduler(Scheduler):
                 forward_output.copy_done_event.synchronize()
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
-            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            
             return forward_output
