@@ -118,6 +118,7 @@ class Scheduler(SchedulerIOMixin):
             return
         batch, (_, next_tokens_cpu, copy_done) = last_data[0].batch, last_data[1]
         copy_done.synchronize()
+        logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
         reply = BatchTokenizerMsg(data=[])
 
         max_seq_len = self.engine.max_seq_len
