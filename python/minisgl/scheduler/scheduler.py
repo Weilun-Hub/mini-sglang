@@ -295,27 +295,27 @@ class TargetScheduler(Scheduler):
         assert config.tp_info.role == Role.TARGET
         super().__init__(config)
 
-    def normal_loop(self) -> None:
-        blocking = not (self.prefill_manager.runnable or self.decode_manager.runnable)
-        for msg in self.receive_msg(blocking=blocking):
-            self._process_one_msg(msg)
+    # def normal_loop(self) -> None:
+    #     blocking = not (self.prefill_manager.runnable or self.decode_manager.runnable)
+    #     for msg in self.receive_msg(blocking=blocking):
+    #         self._process_one_msg(msg)
 
-        forward_input = self._schedule_next_batch()
-        phase = None if forward_input is None else forward_input.batch.phase
-        if phase == "prefill":
-            ongoing_data = None
-            if forward_input is not None:
-                ongoing_data = (forward_input, self._forward(forward_input))
+    #     forward_input = self._schedule_next_batch()
+    #     phase = None if forward_input is None else forward_input.batch.phase
+    #     if phase == "prefill":
+    #         ongoing_data = None
+    #         if forward_input is not None:
+    #             ongoing_data = (forward_input, self._forward(forward_input))
 
-            self._process_last_data(ongoing_data, None)
-        elif phase == "decode":
-            logger.info(f"{torch.distributed.get_rank()} TargetScheduler decode phase")
-            ongoing_data = None
-            if forward_input is not None:
-                ongoing_data = (forward_input, self._forward(forward_input))
+    #         self._process_last_data(ongoing_data, None)
+    #     elif phase == "decode":
+    #         logger.info(f"{torch.distributed.get_rank()} TargetScheduler decode phase")
+    #         ongoing_data = None
+    #         if forward_input is not None:
+    #             ongoing_data = (forward_input, self._forward(forward_input))
 
-            self._process_last_data(ongoing_data, None)
-            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+    #         self._process_last_data(ongoing_data, None)
+    #         torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
 class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
@@ -325,26 +325,26 @@ class DraftScheduler(Scheduler):
         # [TODO] set gamma for draft scheduler
         self.gamma = 3
 
-    def normal_loop(self) -> None:
-        blocking = not (self.prefill_manager.runnable or self.decode_manager.runnable)
-        for msg in self.receive_msg(blocking=blocking):
-            self._process_one_msg(msg)
+    # def normal_loop(self) -> None:
+    #     blocking = not (self.prefill_manager.runnable or self.decode_manager.runnable)
+    #     for msg in self.receive_msg(blocking=blocking):
+    #         self._process_one_msg(msg)
 
-        forward_input = self._schedule_next_batch()
-        phase = None if forward_input is None else forward_input.batch.phase
-        if phase == "prefill":
-            ongoing_data = None
-            if forward_input is not None:
-                ongoing_data = (forward_input, self._forward(forward_input))
-            self._process_last_data(ongoing_data, None)
-        elif phase == "decode":
-            logger.info(f"{torch.distributed.get_rank()} DraftScheduler decode phase")
-            for _ in range(self.gamma):
-                ongoing_data = None
-                if forward_input is not None:
-                    ongoing_data = (forward_input, self._forward(forward_input))
-                self._process_last_data(ongoing_data, None)
-                forward_input = self._schedule_next_batch()
-                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+    #     forward_input = self._schedule_next_batch()
+    #     phase = None if forward_input is None else forward_input.batch.phase
+    #     if phase == "prefill":
+    #         ongoing_data = None
+    #         if forward_input is not None:
+    #             ongoing_data = (forward_input, self._forward(forward_input))
+    #         self._process_last_data(ongoing_data, None)
+    #     elif phase == "decode":
+    #         logger.info(f"{torch.distributed.get_rank()} DraftScheduler decode phase")
+    #         for _ in range(self.gamma):
+    #             ongoing_data = None
+    #             if forward_input is not None:
+    #                 ongoing_data = (forward_input, self._forward(forward_input))
+    #             self._process_last_data(ongoing_data, None)
+    #             forward_input = self._schedule_next_batch()
+    #             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
 
