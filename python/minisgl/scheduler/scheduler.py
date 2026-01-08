@@ -325,26 +325,27 @@ class DraftScheduler(Scheduler):
         # [TODO] set gamma for draft scheduler
         self.gamma = 3
 
-    # def normal_loop(self) -> None:
-    #     blocking = not (self.prefill_manager.runnable or self.decode_manager.runnable)
-    #     for msg in self.receive_msg(blocking=blocking):
-    #         self._process_one_msg(msg)
-
-    #     forward_input = self._schedule_next_batch()
-    #     phase = None if forward_input is None else forward_input.batch.phase
-    #     if phase == "prefill":
-    #         ongoing_data = None
-    #         if forward_input is not None:
-    #             ongoing_data = (forward_input, self._forward(forward_input))
-    #         self._process_last_data(ongoing_data, None)
-    #     elif phase == "decode":
-    #         logger.info(f"{torch.distributed.get_rank()} DraftScheduler decode phase")
-    #         for _ in range(self.gamma):
-    #             ongoing_data = None
-    #             if forward_input is not None:
-    #                 ongoing_data = (forward_input, self._forward(forward_input))
-    #             self._process_last_data(ongoing_data, None)
-    #             forward_input = self._schedule_next_batch()
-    #             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-
+    def _prepare_batch(self, batch: Batch) -> ForwardInput:
+        logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with reqs {[r.extend_len for r in batch.reqs]}")
+        needed_size = sum(r.extend_len for r in batch.reqs)
+        batch.out_loc = self.cache_manager.allocate(needed_size)
+        # NOTE: Pad the batch if needed
+        if padding_size := self.engine.graph_runner.pad_batch(batch):
+            batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+        # NOTE: prepare 2d indices for token ids loading and writing
+        load_indices = _make_2d_indices(
+            self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+        )
+        write_indices = _make_2d_indices(
+            self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
+        )
+        # NOTE: write out_loc to page_table before `prepare_metadata`
+        self.page_table.view(-1)[load_indices] = batch.out_loc
+        self.engine.attn_backend.prepare_metadata(batch)
+        return ForwardInput(
+            batch=batch,
+            sample_args=self.engine.sampler.prepare(batch),
+            load_indices=load_indices,
+            write_indices=write_indices,
+        )
 
