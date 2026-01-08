@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Dict, NamedTuple, Tuple
 
+from copy import deepcopy
+
 import torch
 from minisgl.attention import create_attention_backend
 from minisgl.core import Batch, Context, Req, set_global_ctx
@@ -258,6 +260,10 @@ class DraftEngine(Engine):
 
         logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
+    def prepare_one_step_decode_batch(self, batch: Batch, step: int) -> Batch:
+        pass
+
+
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
             assert torch.cuda.current_stream() == self.stream
@@ -282,18 +288,27 @@ class DraftEngine(Engine):
         elif batch.phase == "decode":
             assert torch.cuda.current_stream() == self.stream
             logger.info(f"{torch.distributed.get_rank()} self.gamma: {self.gamma}")
-            for i in range(1, self.gamma):
-                cur_batch = None
-            with self.ctx.forward_batch(batch):
-                if self.graph_runner.can_use_cuda_graph(batch):
-                    logits = self.graph_runner.replay(batch)
-                else:
-                    logits = self.model.forward()
-
             for req in batch.reqs:
-                req.complete_one()
+                req.device_len -= self.gamma - 1
+            cur_batch = deepcopy(batch)
+            next_tokens_gpu = torch.empty((batch.size, self.gamma), dtype=torch.int32, device=self.device)
+            for i in range(0, self.gamma):
+                cur_batch.out_loc = batch.out_loc[i::self.gamma]
 
-            next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
+                self.attn_backend.prepare_metadata(cur_batch)
+
+                with self.ctx.forward_batch(cur_batch):
+                    if self.graph_runner.can_use_cuda_graph(cur_batch):
+                        logits = self.graph_runner.replay(cur_batch)
+                    else:
+                        logits = self.model.forward()
+
+                for req in cur_batch.reqs:
+                    req.complete_one()
+
+                next_tokens_gpu[:, i] = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
+                logger.info(f"{torch.distributed.get_rank()} decode step {i} completed: {next_tokens_gpu[:, i]}")
+            
             next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
             copy_done_event = torch.cuda.Event()
             copy_done_event.record()
