@@ -26,7 +26,7 @@ from .table import TableManager
 
 from minisgl.distributed.info import Role, get_tp_info
 
-from minisgl.core import Seq
+from minisgl.core import Req
 
 if TYPE_CHECKING:
     from minisgl.engine import BatchSamplingArgs, ForwardOutput
@@ -438,16 +438,16 @@ class DraftScheduler(Scheduler):
 
             return forward_output
         
-    def verify(self, seqs: list[Seq]) -> None:
+    def verify(self, seqs: list[Req]) -> None:
         local_rank = get_tp_info()
         if local_rank == 0:
             to_be_verified_tokens = []
             next_round_input = []
-            for seq in seqs:
-                if seq.pre_verify:
-                    to_be_verified_tokens.append(seq.input_ids[- self.gamma])
+            for req in seqs:
+                if req.pre_verify:
+                    to_be_verified_tokens.append(req.input_ids[- self.gamma])
                 else:
-                    to_be_verified_tokens.extend(seq.input_ids[-2 * self.gamma + 1 : - self.gamma + 1])
-                next_round_input.append(seq.input_ids[- self.gamma :])
+                    to_be_verified_tokens.extend(req.input_ids[-2 * self.gamma + 1 : - self.gamma + 1])
+                next_round_input.append(req.input_ids[- self.gamma :])
                 logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
                 logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
