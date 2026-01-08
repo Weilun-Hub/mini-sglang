@@ -26,7 +26,7 @@ from .table import TableManager
 
 from minisgl.distributed.info import Role, get_tp_info
 
-from minisgl.engine.batch import Seq
+from minisgl.core import Seq
 
 if TYPE_CHECKING:
     from minisgl.engine import BatchSamplingArgs, ForwardOutput
