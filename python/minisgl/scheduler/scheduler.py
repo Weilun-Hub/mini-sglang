@@ -322,21 +322,20 @@ class DraftScheduler(Scheduler):
                     f"request {msg.uid} is dropped."
                 )
             max_output_len = max_seq_len - input_len
-            if msg.sampling_params.max_tokens + self.gamma > max_output_len:
-                msg.sampling_params.max_tokens = max_output_len - self.gamma
+            if msg.sampling_params.max_tokens > max_output_len:
+                msg.sampling_params.max_tokens = max_output_len
                 logger.warning_rank0(
-                    f"Adjust max_tokens to {max_output_len - self.gamma} for request {msg.uid}."
+                    f"Adjust max_tokens to {max_output_len} for request {msg.uid}."
                 )
-            msg.sampling_params.max_tokens += self.gamma
             self.prefill_manager.add_one_req(msg)
         else:
             logger.error(f"Unknown message type: {type(msg)}")
             raise NotImplementedError
 
     def _prepare_batch(self, batch: Batch) -> ForwardInput:
-        logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with reqs {[r.extend_len for r in batch.reqs]}")
         needed_size = sum(r.extend_len for r in batch.reqs)
         batch.out_loc = self.cache_manager.allocate(needed_size)
+        logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with extend_len {[r.extend_len for r in batch.reqs]}, out_loc: {batch.out_loc}")
         # NOTE: Pad the batch if needed
         if padding_size := self.engine.graph_runner.pad_batch(batch):
             batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
@@ -383,7 +382,7 @@ class DraftScheduler(Scheduler):
             if not req.sampling_params.ignore_eos:
                 finished |= next_token == self.eos_token_id
             logger.info(f"{torch.distributed.get_rank()} finish point 1, finished: {finished}")
-            if req.device_len >= max_seq_len - 1 + self.gamma:
+            if req.device_len >= max_seq_len - 1:
                 finished = True
                 logger.warning_rank0(f"Request {req.uid} reached {max_seq_len = }, dropped.")
             reply.data.append(DetokenizeMsg(uid=req.uid, next_token=next_token, finished=finished))
@@ -409,3 +408,20 @@ class DraftScheduler(Scheduler):
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
+
+    def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
+        if forward_input.batch.phase == "prefill":
+            return super()._forward(forward_input)
+        elif forward_input.batch.phase == "decode":
+            for i in range(self.gamma):
+                self._load_token_ids(forward_input)
+                batch, sample_args = forward_input.batch, forward_input.sample_args
+                logger.info(f"{torch.distributed.get_rank()} Starting forward for {batch.phase}: {batch.input_ids}")
+                forward_output = self.engine.forward_batch(batch, sample_args)
+                self._write_token_ids(forward_input, forward_output)
+                logger.info(f"{torch.distributed.get_rank()} forward_batch {forward_input.batch.phase} completed")
+                forward_output.copy_done.synchronize()
+                forward_input = self._prepare_batch(batch)
+
+
+            return forward_output
