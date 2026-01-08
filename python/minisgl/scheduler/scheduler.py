@@ -299,6 +299,7 @@ class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
         assert config.tp_info.role == Role.DRAFT
         super().__init__(config)
+        self.gamma = 3
 
     def _prepare_batch(self, batch: Batch) -> ForwardInput:
         logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with reqs {[r.extend_len for r in batch.reqs]}")
@@ -324,3 +325,49 @@ class DraftScheduler(Scheduler):
             write_indices=write_indices,
         )
 
+    def _process_last_data(
+        self, last_data: ForwardData | None, ongoing_data: ForwardData | None
+    ) -> None:
+        if last_data is None:
+            return
+        batch, (_, next_tokens_cpu, copy_done) = last_data[0].batch, last_data[1]
+        copy_done.synchronize()
+        reply = BatchTokenizerMsg(data=[])
+
+        max_seq_len = self.engine.max_seq_len
+        for i, req in enumerate(batch.reqs):
+            if req in self.finished_reqs or isinstance(req, ChunkedReq):
+                continue
+
+            logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {i}: next_token_id {next_tokens_cpu[i]}")
+
+            next_token_id = next_tokens_cpu[i]
+            req.append_host(next_token_id.unsqueeze(0))
+            next_token = int(next_token_id.item())
+            finished = req.remain_len <= 0
+            if not req.sampling_params.ignore_eos:
+                finished |= next_token == self.eos_token_id
+            if req.device_len >= max_seq_len - 1 + self.gamma:
+                finished = True
+                logger.warning_rank0(f"Request {req.uid} reached {max_seq_len = }, dropped.")
+            reply.data.append(DetokenizeMsg(uid=req.uid, next_token=next_token, finished=finished))
+
+            # free resources if the req is finished and not ongoing
+            if finished:
+                self.finished_reqs.add(req)
+                self.decode_manager.remove_req(req)
+                logger.debug_rank0("Request %s is finished", req)
+
+        # free resources for finished but not ongoing reqs
+        ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
+        for req in self.finished_reqs.difference(ongoing_reqs):
+            self.table_manager.free(req.table_idx)
+            self.cache_manager.free_and_cache_finished_req(
+                req.cache_handle,
+                req.input_ids[: req.cached_len],
+                self.page_table[req.table_idx, : req.cached_len],
+            )
+
+        # keep only ongoing reqs in the finished set
+        self.finished_reqs.intersection_update(ongoing_reqs)
+        self.send_result(reply)

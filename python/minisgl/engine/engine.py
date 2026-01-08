@@ -124,30 +124,6 @@ class Engine:
         torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
 
     def _init_communication(self, config: EngineConfig) -> torch.distributed.ProcessGroup:
-        # if config.tp_info.size == 1 or config.use_pynccl:
-        #     torch.distributed.init_process_group(
-        #         backend="gloo",
-        #         rank=config.tp_info.rank,
-        #         world_size=config.tp_info.size,
-        #         timeout=timedelta(seconds=config.distributed_timeout),
-        #         init_method=config.distributed_addr,
-        #     )
-        #     tp_cpu_group = torch.distributed.group.WORLD
-        #     assert tp_cpu_group is not None
-        #     max_bytes = (
-        #         config.max_forward_len * config.model_config.hidden_size * self.dtype.itemsize
-        #     )
-        #     enable_pynccl_distributed(config.tp_info, tp_cpu_group, max_bytes)
-        # else:
-        #     torch.distributed.init_process_group(
-        #         backend="nccl",
-        #         rank=config.tp_info.rank,
-        #         world_size=config.tp_info.size,
-        #         timeout=timedelta(seconds=config.distributed_timeout),
-        #         init_method=config.distributed_addr,
-        #     )
-        #     tp_cpu_group = torch.distributed.new_group(backend="gloo")
-        #     assert tp_cpu_group is not None
 
         torch.distributed.init_process_group(
             backend="nccl",
