@@ -440,7 +440,7 @@ class DraftScheduler(Scheduler):
         
     def verify(self, seqs: list[Req]) -> None:
         local_rank = get_tp_info()
-        logger.info(f"{torch.distributed.get_rank()} verify called with seqs: {seqs}")
+        logger.info(f"{torch.distributed.get_rank()} verify called with seqs: {local_rank}")
         if local_rank == 0:
             to_be_verified_tokens = []
             next_round_input = []
