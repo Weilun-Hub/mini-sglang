@@ -253,7 +253,9 @@ class Engine:
 class DraftEngine(Engine):
     def __init__(self, config: EngineConfig):
         super().__init__(config)
-        self.gamma = 3
+        self.gamma = None
+        self.token_pool = None
+
         logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
@@ -279,6 +281,9 @@ class DraftEngine(Engine):
             return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
         elif batch.phase == "decode":
             assert torch.cuda.current_stream() == self.stream
+            logger.info(f"{torch.distributed.get_rank()} self.gamma: {self.gamma}")
+            for i in range(1, self.gamma):
+                cur_batch = None
             with self.ctx.forward_batch(batch):
                 if self.graph_runner.can_use_cuda_graph(batch):
                     logits = self.graph_runner.replay(batch)

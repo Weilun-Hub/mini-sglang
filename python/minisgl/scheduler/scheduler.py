@@ -304,6 +304,8 @@ class DraftScheduler(Scheduler):
         assert config.tp_info.role == Role.DRAFT
         super().__init__(config)
         self.gamma = 3
+        self.engine.gamma = self.gamma
+        self.engine.token_pool = self.token_pool
     
     def _process_one_msg(self, msg: BaseBackendMsg) -> None:
         if isinstance(msg, BatchBackendMsg):
