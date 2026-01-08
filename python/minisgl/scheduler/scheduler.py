@@ -423,7 +423,16 @@ class DraftScheduler(Scheduler):
                 self._write_token_ids(forward_input, forward_output)
                 logger.info(f"{torch.distributed.get_rank()} forward_batch {forward_input.batch.phase} completed")
                 forward_output.copy_done_event.synchronize()
+                next_tokens_cpu = forward_output.next_tokens_cpu
+                for idx_req, req in enumerate(batch.reqs):
+                    req.append_host(next_tokens_cpu[idx_req].unsqueeze(0))
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
+
+            for i, req in enumerate(forward_input.batch.reqs):
+                logger.info(f"{torch.distributed.get_rank()} after draft req {i}: req {req.input_ids}")
             
             return forward_output
+        
+    def verify(self) -> None:
+        pass
