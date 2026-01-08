@@ -277,14 +277,31 @@ class Engine:
 class DraftEngine(Engine):
     def __init__(self, config: EngineConfig):
         super().__init__(config)
+        self.gamma = 3
         logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
-            forward_output = super().forward_batch(batch, args)
+            assert torch.cuda.current_stream() == self.stream
+            with self.ctx.forward_batch(batch):
+                if self.graph_runner.can_use_cuda_graph(batch):
+                    logits = self.graph_runner.replay(batch)
+                else:
+                    logits = self.model.forward()
+
+            for req in batch.reqs:
+                # req.complete_one()
+                self.cached_len = self.device_len
+                self.device_len += self.gamma
+
+            next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
+            next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
+            copy_done_event = torch.cuda.Event()
+            copy_done_event.record()
+            
             logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch prefill completed for batch with reqs {[req.uid for req in batch.reqs]}")
             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            return forward_output
+            return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
         elif batch.phase == "decode":
             assert torch.cuda.current_stream() == self.stream
             with self.ctx.forward_batch(batch):
@@ -304,21 +321,6 @@ class DraftEngine(Engine):
         else:
             raise ValueError(f"Unknown batch phase: {batch.phase}")
 
-        # assert torch.cuda.current_stream() == self.stream
-        # with self.ctx.forward_batch(batch):
-        #     if self.graph_runner.can_use_cuda_graph(batch):
-        #         logits = self.graph_runner.replay(batch)
-        #     else:
-        #         logits = self.model.forward()
-
-        # for req in batch.reqs:
-        #     req.complete_one()
-
-        # next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
-        # next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
-        # copy_done_event = torch.cuda.Event()
-        # copy_done_event.record()
-        # return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
 
 class TargetEngine(Engine):
     def __init__(self, config: EngineConfig):
