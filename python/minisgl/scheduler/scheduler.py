@@ -230,7 +230,7 @@ class Scheduler(SchedulerIOMixin):
         forward_output = self.engine.forward_batch(batch, sample_args)
         self._write_token_ids(forward_input, forward_output)
         self.decode_manager.add_reqs(forward_input.batch.reqs)
-        logger.info(f"{torch.distributed.get_rank()} DraftEngine forward_batch {forward_input.batch.phase} completed")
+        logger.info(f"{torch.distributed.get_rank()} forward_batch {forward_input.batch.phase} completed")
         return forward_output
 
     def run_when_idle(self) -> None:
