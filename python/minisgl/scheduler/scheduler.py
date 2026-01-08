@@ -422,7 +422,7 @@ class DraftScheduler(Scheduler):
                 self._write_token_ids(forward_input, forward_output)
                 logger.info(f"{torch.distributed.get_rank()} forward_batch {forward_input.batch.phase} completed")
                 forward_output.copy_done_event.synchronize()
-                forward_input = self._prepare_batch(batch)
-
-
+                if i < self.gamma - 1:
+                    forward_input = self._prepare_batch(batch)
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return forward_output
