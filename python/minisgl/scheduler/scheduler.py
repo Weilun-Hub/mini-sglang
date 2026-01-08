@@ -24,7 +24,9 @@ from .io import SchedulerIOMixin
 from .prefill import ChunkedReq, PrefillManager
 from .table import TableManager
 
-from minisgl.distributed.info import Role
+from minisgl.distributed.info import Role, get_tp_info
+
+from minisgl.engine.batch import Seq
 
 if TYPE_CHECKING:
     from minisgl.engine import BatchSamplingArgs, ForwardOutput
@@ -413,7 +415,7 @@ class DraftScheduler(Scheduler):
         if forward_input.batch.phase == "prefill":
             return super()._forward(forward_input)
         elif forward_input.batch.phase == "decode":
-            return super()._forward(forward_input)
+            # return super()._forward(forward_input)
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
                 batch, sample_args = forward_input.batch, forward_input.sample_args
@@ -432,7 +434,20 @@ class DraftScheduler(Scheduler):
             for i, req in enumerate(forward_input.batch.reqs):
                 logger.info(f"{torch.distributed.get_rank()} after draft req {i}: req {req.input_ids}")
             
+            self.verify(forward_input.batch.reqs)
+
             return forward_output
         
-    def verify(self) -> None:
-        pass
+    def verify(self, seqs: list[Seq]) -> None:
+        local_rank = get_tp_info()
+        if local_rank == 0:
+            to_be_verified_tokens = []
+            next_round_input = []
+            for seq in seqs:
+                if seq.pre_verify:
+                    to_be_verified_tokens.append(seq.input_ids[- self.gamma])
+                else:
+                    to_be_verified_tokens.extend(seq.input_ids[-2 * self.gamma + 1 : - self.gamma + 1])
+                next_round_input.append(seq.input_ids[- self.gamma :])
+                logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
+                logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")

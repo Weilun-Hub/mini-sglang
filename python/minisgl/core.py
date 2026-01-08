@@ -33,9 +33,11 @@ class Req:
     uid: int
     sampling_params: SamplingParams
     cache_handle: BaseCacheHandle
+    pre_verify: bool
 
     def __post_init__(self) -> None:
         assert self.input_ids.is_cpu
+        self.pre_verify = True
         self.device_len = len(self.input_ids)
         self.max_device_len = len(self.input_ids) + self.output_len
         assert 0 <= self.cached_len < self.device_len <= self.max_device_len
