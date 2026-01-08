@@ -291,8 +291,8 @@ class DraftEngine(Engine):
 
             for req in batch.reqs:
                 # req.complete_one()
-                self.cached_len = self.device_len
-                self.device_len += self.gamma
+                req.cached_len = req.device_len
+                req.device_len += self.gamma
 
             next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
             next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
