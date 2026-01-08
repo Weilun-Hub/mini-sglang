@@ -351,7 +351,7 @@ class DraftScheduler(Scheduler):
             req.append_host(next_token_id.unsqueeze(0))
             next_token = int(next_token_id.item())
             finished = req.remain_len <= 0
-            logger.info(f"{torch.distributed.get_rank()} finish point 0, finished: {finished}")
+            logger.info(f"{torch.distributed.get_rank()} finish point 0, req.remain_len: {req.remain_len}, finished: {finished}")
             if not req.sampling_params.ignore_eos:
                 finished |= next_token == self.eos_token_id
             logger.info(f"{torch.distributed.get_rank()} finish point 1, finished: {finished}")
