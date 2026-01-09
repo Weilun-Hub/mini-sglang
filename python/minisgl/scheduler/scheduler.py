@@ -327,6 +327,8 @@ class TargetScheduler(Scheduler):
         logger.info(f'{rank} Logits shape: {logits.shape}')
         logger.info(f'{rank} Sample args: {sample_args}')
 
+        verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
+
         if local_rank == 0:
             
             num_to_be_verified_tokens = sum([1 if req.pre_verify else self.gamma for req in reqs])
@@ -340,7 +342,7 @@ class TargetScheduler(Scheduler):
             logger.info(f"{torch.distributed.get_rank()} Received to_be_verified_tokens: {to_be_verified_tokens}")
             logger.info(f"{torch.distributed.get_rank()} Received next_round_input: {next_round_input}")
 
-            verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
+            # verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
 
             r = torch.rand(num_to_be_verified_tokens, device="cuda")
             target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
@@ -405,7 +407,7 @@ class TargetScheduler(Scheduler):
 
             logger.info(f"{torch.distributed.get_rank()} Verification results: {verify_res}")
         
-            torch.distributed.broadcast(verify_res, src=rank, group=self.engine.verify_group)
+        torch.distributed.broadcast(verify_res, src=0)
 
 
 
@@ -566,6 +568,6 @@ class DraftScheduler(Scheduler):
             msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
 
-            verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
-            torch.distributed.broadcast(verify_res, src=0, group=self.engine.verify_group)
-            logger.info(f"{torch.distributed.get_rank()} Received verification results: {verify_res}")
+        verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
+        torch.distributed.broadcast(verify_res, src=0)
+        logger.info(f"{torch.distributed.get_rank()} Received verification results: {verify_res}")
