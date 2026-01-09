@@ -333,6 +333,7 @@ class TargetScheduler(Scheduler):
         if last_data is None:
             return
         batch = last_data[0].batch
+        sample_args = last_data[0].sample_args
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
             logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
@@ -372,7 +373,7 @@ class TargetScheduler(Scheduler):
 
             logger.info(f"{rank} Verifying logits on rank {local_rank}...")
             logger.info(f'{rank} Logits shape: {logits.shape}')
-            logger.info(f'{rank} Sample args: {batch.sample_args}')
+            logger.info(f'{rank} Sample args: {sample_args}')
 
             verify_res = torch.zeros((4, len(batch.reqs)), dtype=torch.int64, device="cuda")
 
@@ -392,13 +393,13 @@ class TargetScheduler(Scheduler):
                 # verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
-                target_logits = sampling.softmax(logits, batch.sample_args.temperatures, enable_pdl=is_sm90_supported())
+                target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
                 logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
 
                 logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
-                revised_tokens = self.engine.sampler.sample(logits, batch.sample_args)
+                revised_tokens = self.engine.sampler.sample(logits, sample_args)
                 logger.info(f"{torch.distributed.get_rank()} Revised tokens: {revised_tokens}")
 
                 acc, rollout, revise_token, finish = [], [], [], []
