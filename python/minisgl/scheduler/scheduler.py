@@ -300,6 +300,7 @@ class TargetScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
         assert config.tp_info.role == Role.TARGET
         super().__init__(config)
+        self.gamma = 3
     
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
