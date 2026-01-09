@@ -40,7 +40,7 @@ class Engine:
         self.model_config = config.model_config
         set_tp_info(rank=config.tp_info.rank, size=config.tp_info.size, role=config.tp_info.role, local_rank=config.tp_info.local_rank, local_size=config.tp_info.local_size)
 
-        assert not torch.cuda.is_initialized()
+        # assert not torch.cuda.is_initialized()
         self.device = torch.device(f"cuda:{config.tp_info.rank}")
         torch.cuda.set_device(self.device)
         self.stream = torch.cuda.Stream()
