@@ -61,6 +61,11 @@ class Req:
 
     def can_decode(self) -> bool:
         return self.remain_len > 0
+    
+    def rollback(self, n: int) -> None:
+        self.device_len -= n
+        self.cached_len -= n
+        self.input_ids = self.input_ids[:-n]
 
     def __repr__(self) -> str:
         return (

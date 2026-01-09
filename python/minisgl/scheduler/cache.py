@@ -61,6 +61,12 @@ class CacheManager:
         self._free(indices[old_handle.cached_len : in_cache_len])
         self.unlock(old_handle)
 
+    def rollback(
+        self,
+        indices: torch.Tensor,
+    ) -> None:
+        self._free(indices)
+    
     def check_integrity(self) -> None:
         self.manager.check_integrity()
         if len(self._free_slots) + self.manager.size_info.total_size != self.num_pages:
