@@ -489,8 +489,8 @@ class DraftScheduler(Scheduler):
                 else:
                     to_be_verified_tokens.extend(req.input_ids[-2 * self.gamma + 1 : - self.gamma + 1].numpy().tolist())
                 next_round_input.append(req.input_ids[- self.gamma :].numpy().tolist())
-                logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
-                logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
+            logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
+            logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
             msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
             
