@@ -331,7 +331,7 @@ class TargetScheduler(Scheduler):
             num_to_be_verified_tokens = sum([1 if req.pre_verify else self.gamma for req in reqs])
             num_next_round_input = self.gamma * len(reqs)
             msg = torch.zeros(num_to_be_verified_tokens + num_next_round_input, dtype=torch.int64, device="cuda")
-            src_rank = self.tp_info.world_size - self.tp_info.local_size # draft rank 0
+            src_rank = self.tp_info.size - self.tp_info.local_size # draft rank 0
             torch.distributed.broadcast(msg, src=src_rank, group=self.engine.verify_group)
             to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
             next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
