@@ -334,12 +334,14 @@ class TargetScheduler(Scheduler):
             return
         batch = last_data[0].batch
         sample_args = last_data[0].sample_args
+
+        reply = BatchTokenizerMsg(data=[])
+
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
             logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
             copy_done.synchronize()
             logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
-            reply = BatchTokenizerMsg(data=[])
 
             max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(batch.reqs):
@@ -478,7 +480,11 @@ class TargetScheduler(Scheduler):
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor(revise_token[idx]))
 
-
+                reply.data.append(DetokenizeMsg(uid=req.uid, next_token=req.input_ids[-1], finished=finish[idx]))
+                if finish[idx]:
+                    self.finished_reqs.add(req)
+                    self.decode_manager.remove_req(req)
+                    logger.debug_rank0("Request %s is finished", req)
 
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
