@@ -332,9 +332,9 @@ class TargetScheduler(Scheduler):
     ) -> None:
         if last_data is None:
             return
-        
+        batch = last_data[0].batch
         if batch.phase == "prefill":
-            batch, (_, next_tokens_cpu, copy_done) = last_data[0].batch, last_data[1]
+            _, next_tokens_cpu, copy_done = last_data[1]
             logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
             copy_done.synchronize()
             logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
@@ -365,7 +365,7 @@ class TargetScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     logger.debug_rank0("Request %s is finished", req)
         elif batch.phase == "decode": # verify
-            batch, logits = last_data[0].batch, last_data[1]
+            logits = last_data[1]
 
             local_rank = self.tp_info.local_rank
             rank = self.tp_info.rank
