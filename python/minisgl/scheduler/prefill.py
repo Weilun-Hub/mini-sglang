@@ -86,6 +86,8 @@ class PrefillAdder:
             cache_handle=cache_handle,
             sampling_params=pending_req.sampling_params,
             pre_verify=True,
+            cur_acc_tokens=0,
+            num_acc_tokens=[],
         )
 
     def try_add_one(self, pending_req: PendingReq) -> Req | None:

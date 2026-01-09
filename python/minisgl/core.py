@@ -34,6 +34,8 @@ class Req:
     sampling_params: SamplingParams
     cache_handle: BaseCacheHandle
     pre_verify: bool
+    cur_acc_tokens: int
+    num_acc_tokens: list[int]
 
     def __post_init__(self) -> None:
         assert self.input_ids.is_cpu

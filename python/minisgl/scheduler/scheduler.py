@@ -14,7 +14,7 @@ from minisgl.message import (
     ExitMsg,
     UserMsg,
 )
-from minisgl.utils import init_logger
+from minisgl.utils import init_logger, is_sm90_supported
 from transformers import AutoTokenizer
 
 from .cache import CacheManager
@@ -31,6 +31,7 @@ from minisgl.core import Req
 if TYPE_CHECKING:
     from minisgl.engine import BatchSamplingArgs, ForwardOutput
 
+import flashinfer.sampling as sampling
 
 logger = init_logger(__name__)
 
@@ -339,6 +340,76 @@ class TargetScheduler(Scheduler):
             logger.info(f"{torch.distributed.get_rank()} Received to_be_verified_tokens: {to_be_verified_tokens}")
             logger.info(f"{torch.distributed.get_rank()} Received next_round_input: {next_round_input}")
 
+            verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
+
+            r = torch.rand(num_to_be_verified_tokens, device="cuda")
+            target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
+            target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
+            judge = (r <= target_prob).tolist()
+            logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
+
+            logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
+            revised_tokens = self.engine.sampler.sample(logits, sample_args)
+            logger.info(f"{torch.distributed.get_rank()} Revised tokens: {revised_tokens}")
+
+            acc, rollout, revise_token, finish = [], [], [], []
+
+            v_idx = 0
+            for i, req in enumerate(reqs):
+                if req.pre_verify:
+                    acc.append(judge[v_idx])
+                    rollout.append(0 if judge[v_idx] else self.gamma)
+                    revise_token.append(revised_tokens[v_idx])
+
+                    if judge[v_idx]:
+                        req.cur_acc_tokens += 1
+                        # finish.append(req.)
+                        is_finished = not req.sampling_params.ignore_eos
+                        is_finished &= to_be_verified_tokens[v_idx] == self.eos_token_id
+                        is_finished |= req.device_len >= self.engine.max_seq_len - 1
+                        finish.append(is_finished)
+                    else:
+                        req.num_acc_tokens.append(req.cur_acc_tokens + 1)
+                        req.cur_acc_tokens = 0
+
+                        is_finished = not req.sampling_params.ignore_eos
+                        is_finished &= revise_token[-1] == self.eos_token_id
+                        is_finished |= req.device_len >= self.engine.max_seq_len - 1
+                        finish.append(is_finished)
+                else:
+                    n = self.gamma
+                    is_finished = False
+                    for j in range(v_idx, v_idx + self.gamma):
+                        if ((not req.ignore_eos) and judge[j]) and (to_be_verified_tokens[j] == self.eos_token_id):
+                            is_finished = True
+                        
+                        if not judge[j]:
+                            n = j - v_idx
+                            break
+                    
+                    acc.append(n == self.gamma)
+                    rollout.append(self.gamma - n)
+                    revise_token.append(revised_tokens[v_idx + n] if n < self.gamma else -1)
+
+                    is_finished |= req.device_len >= self.engine.max_seq_len - min(n + 1, self.gamma)
+                    finish.append(is_finished)
+
+                    if n == self.gamma:
+                        req.cur_acc_tokens += n
+                    else:
+                        req.num_acc_tokens.append(req.cur_acc_tokens + n + 1)
+                        req.cur_acc_tokens = 0
+                
+                v_idx += 1 if req.pre_verify else self.gamma
+            verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
+
+            logger.info(f"{torch.distributed.get_rank()} Verification results: {verify_res}")
+        
+            torch.distributed.broadcast(verify_res, src=rank, group=self.engine.verify_group)
+
+
+
+
 
 class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
@@ -477,14 +548,14 @@ class DraftScheduler(Scheduler):
 
             return forward_output
         
-    def verify(self, seqs: list[Req]) -> None:
+    def verify(self, reqs: list[Req]) -> None:
         local_rank = get_tp_info().local_rank
         rank = get_tp_info().rank
         logger.info(f"{torch.distributed.get_rank()} verify called with local_rank: {local_rank}")
         if local_rank == 0:
             to_be_verified_tokens = []
             next_round_input = []
-            for req in seqs:
+            for req in reqs:
                 if req.pre_verify:
                     to_be_verified_tokens.append(req.input_ids[- self.gamma].numpy().tolist())
                 else:
@@ -494,4 +565,7 @@ class DraftScheduler(Scheduler):
             logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
             msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
-            
+
+            verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
+            torch.distributed.broadcast(verify_res, src=0, group=self.engine.verify_group)
+            logger.info(f"{torch.distributed.get_rank()} Received verification results: {verify_res}")
