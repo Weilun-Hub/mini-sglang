@@ -142,7 +142,7 @@ class Engine:
 
         target_devices = list(range(0, config.target_tp_size))
         draft_devices = list(range(config.target_tp_size, config.tp_info.size))
-        verify_devices = target_devices + [draft_devices[0]]
+        verify_devices = [target_devices[0]] + [draft_devices[0]]
 
         target_cpu_group = torch.distributed.new_group(target_devices, backend="gloo")
         draft_cpu_group = torch.distributed.new_group(draft_devices, backend="gloo")

@@ -300,6 +300,31 @@ class TargetScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
         assert config.tp_info.role == Role.TARGET
         super().__init__(config)
+    
+    def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
+        if forward_input.batch.phase == "prefill":
+            return super()._forward(forward_input)
+        elif forward_input.batch.phase == "decode":
+            self._load_token_ids(forward_input)
+            batch, sample_args = forward_input.batch, forward_input.sample_args
+            logger.info(f"{torch.distributed.get_rank()} Starting forward for {batch.phase}: {batch.input_ids}")
+            assert torch.cuda.current_stream() == self.engine.stream
+            with self.engine.ctx.forward_batch(batch):
+                if self.engine.graph_runner.can_use_cuda_graph(batch):
+                    logits = self.engine.graph_runner.replay(batch)
+                else:
+                    logits = self.engine.model.forward()
+            
+            self.verify(logits, batch.reqs, sample_args)
+    
+    def verify(self, logits: torch.tensor, reqs: list[Req], sample_args: BatchSamplingArgs) -> None:
+        local_rank = self.tp_info.local_rank
+        rank = self.tp_info.rank
+
+        logger.info(f"{rank} Verifying logits on rank {local_rank}...")
+        logger.info(f'{rank} Logits shape: {logits.shape}')
+        logger.info(f'{rank} Sample args: {sample_args}')
+
 
 class DraftScheduler(Scheduler):
     def __init__(self, config: SchedulerConfig):
@@ -440,6 +465,7 @@ class DraftScheduler(Scheduler):
         
     def verify(self, seqs: list[Req]) -> None:
         local_rank = get_tp_info().local_rank
+        rank = get_tp_info().rank
         logger.info(f"{torch.distributed.get_rank()} verify called with local_rank: {local_rank}")
         if local_rank == 0:
             to_be_verified_tokens = []
@@ -452,3 +478,6 @@ class DraftScheduler(Scheduler):
                 next_round_input.append(req.input_ids[- self.gamma :])
                 logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
                 logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
+            msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
+            torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
+            
