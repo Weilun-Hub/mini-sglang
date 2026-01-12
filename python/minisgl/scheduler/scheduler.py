@@ -501,6 +501,7 @@ class TargetScheduler(Scheduler):
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
+        logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
 
     # def verify(self, logits: torch.tensor, reqs: list[Req], sample_args: BatchSamplingArgs) -> None:
     #     local_rank = self.tp_info.local_rank
