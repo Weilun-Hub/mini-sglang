@@ -481,7 +481,7 @@ class TargetScheduler(Scheduler):
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor(revise_token[idx]))
 
-                reply.data.append(DetokenizeMsg(uid=req.uid, next_token=req.input_ids[-1].numpy(), finished=finish[idx]))
+                reply.data.append(DetokenizeMsg(uid=req.uid, next_token=int(req.input_ids[-1].item()), finished=finish[idx]))
                 logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.input_ids[-1] {req.input_ids[-1]}, req.input_ids[-1].shape {req.input_ids[-1].shape}, finish[idx] = finish[{idx}] = {finish[idx]}")
                 if finish[idx]:
                     self.finished_reqs.add(req)
