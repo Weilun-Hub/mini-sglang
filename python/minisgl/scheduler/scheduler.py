@@ -482,6 +482,7 @@ class TargetScheduler(Scheduler):
                         req.append_host(torch.tensor(revise_token[idx]))
 
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=req.input_ids[-1], finished=finish[idx]))
+                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.input_ids[-1].shape {req.input_ids[-1].shape}, finish[idx] = finish[{idx}] = {finish[idx]}")
                 if finish[idx]:
                     self.finished_reqs.add(req)
                     self.decode_manager.remove_req(req)
