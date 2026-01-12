@@ -738,13 +738,14 @@ class DraftScheduler(Scheduler):
                     continue
                 logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {idx}")
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=req.input_ids[-1], finished=finish[idx]))
-                logger.info(f"{torch.distributed.get_rank()} test for debug")
+                logger.info(f"{torch.distributed.get_rank()} [DEBUG] next_token = {req.input_ids[-1]}, finished = {finish[idx]}")
                 if finish[idx]:
                     self.finished_reqs.add(req)
                     self.decode_manager.remove_req(req)
                     logger.info(f"{torch.distributed.get_rank()} Request {req.uid} is finished in verify")
                     continue
-
+                
+                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, acc[idx] = acc[{idx}] = {finish[idx]}")
                 if req.pre_verify:
                     if acc[idx]:
                         req.pre_verify = False
@@ -761,7 +762,8 @@ class DraftScheduler(Scheduler):
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor([revise_token], device="cpu"))
-            
+
+        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 2")
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
@@ -772,9 +774,11 @@ class DraftScheduler(Scheduler):
                 self.page_table[req.table_idx, : req.cached_len],
             )
 
+        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 3")
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
+        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 4")
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
