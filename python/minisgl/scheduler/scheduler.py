@@ -466,6 +466,7 @@ class TargetScheduler(Scheduler):
                 if req.pre_verify:
                     if acc[idx]:
                         req.pre_verify = False
+                        logger.info(f"{torch.distributed.get_rank()} [DEBUG] next_round_input: {next_round_input[self.gamma * idx : self.gamma * (idx + 1)]}")
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                     else:
                         req.pre_verify = True
