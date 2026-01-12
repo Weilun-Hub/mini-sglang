@@ -7,7 +7,6 @@ import torch
 
 
 def _serialize_any(value: Any) -> Any:
-    print("value", value)
     if isinstance(value, dict):
         return {k: _serialize_any(v) for k, v in value.items()}
     elif isinstance(value, (list, tuple)):
