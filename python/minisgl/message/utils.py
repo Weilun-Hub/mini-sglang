@@ -7,6 +7,7 @@ import torch
 
 
 def _serialize_any(value: Any) -> Any:
+    print("value", value)
     if isinstance(value, dict):
         return {k: _serialize_any(v) for k, v in value.items()}
     elif isinstance(value, (list, tuple)):
@@ -22,7 +23,7 @@ def serialize_type(self) -> Dict:
     serialized = {}
 
     if isinstance(self, torch.Tensor):
-        assert self.dim() == 1, f"we can only serialize 1D tensor for now, self = {self}"
+        assert self.dim() == 1, f"we can only serialize 1D tensor for now"
         serialized["__type__"] = "Tensor"
         serialized["buffer"] = self.numpy().tobytes()
         serialized["dtype"] = str(self.dtype)
