@@ -462,7 +462,7 @@ class TargetScheduler(Scheduler):
             acc, rollout, revise_token, finish = verify_res.tolist()
 
             for idx, req in enumerate(batch.reqs):
-                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, acc[idx] = acc[{idx}] = {finish[idx]}")
+                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, finish[idx] = finish[{idx}] = {finish[idx]}, acc[idx] = acc[{idx}] = {acc[idx]}")
                 if req.pre_verify:
                     if acc[idx]:
                         req.pre_verify = False
