@@ -22,7 +22,7 @@ def serialize_type(self) -> Dict:
     serialized = {}
 
     if isinstance(self, torch.Tensor):
-        assert self.dim() == 1, "we can only serialize 1D tensor for now"
+        assert self.dim() == 1, f"we can only serialize 1D tensor for now, self = {self}"
         serialized["__type__"] = "Tensor"
         serialized["buffer"] = self.numpy().tobytes()
         serialized["dtype"] = str(self.dtype)
