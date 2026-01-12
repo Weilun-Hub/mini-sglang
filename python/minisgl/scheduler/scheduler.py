@@ -289,7 +289,10 @@ class Scheduler(SchedulerIOMixin):
 
                 for i in range(2):
                     self.normal_loop()
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
+            
+            import time; time.sleep(3600)
+
         else:
             assert torch.cuda.current_stream() == self.stream
             data = None
