@@ -287,7 +287,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(2):
+                for i in range(3):
                     self.normal_loop()
             # import pdb; pdb.set_trace()
             
