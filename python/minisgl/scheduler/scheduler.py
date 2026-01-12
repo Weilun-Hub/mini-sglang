@@ -284,8 +284,12 @@ class Scheduler(SchedulerIOMixin):
         if ENV.DISABLE_OVERLAP_SCHEDULING:
             with self.engine_stream_ctx:
                 self.engine.stream.wait_stream(self.stream)
-                while True:
+                # while True:
+                #     self.normal_loop()
+
+                for i in range(2):
                     self.normal_loop()
+                import pdb; pdb.set_trace()
         else:
             assert torch.cuda.current_stream() == self.stream
             data = None
@@ -309,6 +313,51 @@ class TargetScheduler(Scheduler):
         assert config.tp_info.role == Role.TARGET
         super().__init__(config)
         self.gamma = 3
+
+    def _prepare_batch(self, batch: Batch) -> ForwardInput:
+        if batch.phase == "prefill":
+            return super()._prepare_batch(batch)
+        elif batch.phase == "decode":
+            needed_size = 0
+            _write_indices = []
+            for req in batch.reqs:
+                cur_needed_size = 1 if req.pre_verify else self.gamma
+                needed_size += cur_needed_size
+                _write_indices.append((req.table_idx, req.device_len, req.device_len + cur_needed_size))
+
+            batch.out_loc = self.cache_manager.allocate(needed_size)
+            if padding_size := self.engine.graph_runner.pad_batch(batch):
+                batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+
+            load_indices = _make_2d_indices(
+                self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+            )
+            write_indices = _make_2d_indices(
+                self.token_pool, _write_indices
+            )
+
+            # logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:20]}")
+            # needed_size = sum(r.extend_len for r in batch.reqs)
+            # batch.out_loc = self.cache_manager.allocate(needed_size)
+            # NOTE: Pad the batch if needed
+            # if padding_size := self.engine.graph_runner.pad_batch(batch):
+            #     batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+            # NOTE: prepare 2d indices for token ids loading and writing
+            # load_indices = _make_2d_indices(
+            #     self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+            # )
+            # write_indices = _make_2d_indices(
+            #     self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
+            # )
+            # NOTE: write out_loc to page_table before `prepare_metadata`
+            self.page_table.view(-1)[load_indices] = batch.out_loc
+            self.engine.attn_backend.prepare_metadata(batch)
+            return ForwardInput(
+                batch=batch,
+                sample_args=self.engine.sampler.prepare(batch),
+                load_indices=load_indices,
+                write_indices=write_indices,
+            )
     
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
@@ -469,18 +518,22 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = False
                         logger.info(f"{torch.distributed.get_rank()} [DEBUG] next_round_input: {next_round_input[self.gamma * idx : self.gamma * (idx + 1)]}")
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+                        req.device_len += self.gamma
                     else:
                         req.pre_verify = True
                         req.append_host(torch.tensor(revise_token[idx]))
+                        req.device_len += 1
                 else:
                     if acc[idx]:
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+                        req.device_len += self.gamma
                     else:
                         req.pre_verify = True
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor(revise_token[idx]))
+                        req.device_len += 1
 
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=int(req.input_ids[-1].item()), finished=finish[idx]))
                 logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.input_ids[-1] {req.input_ids[-1]}, req.input_ids[-1].shape {req.input_ids[-1].shape}, finish[idx] = finish[{idx}] = {finish[idx]}")
