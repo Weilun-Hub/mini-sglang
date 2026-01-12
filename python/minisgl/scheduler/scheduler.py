@@ -738,6 +738,7 @@ class DraftScheduler(Scheduler):
                     continue
                 logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {idx}")
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=req.input_ids[-1], finished=finish[idx]))
+                logger.info(f"{torch.distributed.get_rank()} test for debug")
                 if finish[idx]:
                     self.finished_reqs.add(req)
                     self.decode_manager.remove_req(req)
