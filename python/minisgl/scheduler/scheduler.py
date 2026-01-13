@@ -545,6 +545,7 @@ class TargetScheduler(Scheduler):
                         req.append_host(torch.tensor(revise_token[idx]))
                         req.device_len += 1
                 else:
+                    
                     if acc[idx]:
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
