@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Tuple
 import torch
 from minisgl.core import get_global_ctx
 from minisgl.layers import BaseOP, OPList, ParallelLMHead, RMSNormFused, VocabParallelEmbedding
-from minisgl.utils import nvtx_annotate
+from minisgl.utils import nvtx_annotate, init_logger
 
 from .base import BaseLLMModel
 from .utils import GatedMLP as Qwen3MLP
@@ -13,6 +13,8 @@ from .utils import RopeAttn as Qwen3Attn
 
 if TYPE_CHECKING:
     from .config import ModelConfig
+
+logger = init_logger(__name__)
 
 
 class Qwen3DecoderLayer(BaseOP):
@@ -77,7 +79,9 @@ class Qwen3ForCausalLM(BaseLLMModel):
         super().__init__()
 
     def forward(self) -> torch.Tensor:
+        logger.info(f"{torch.distributed.get_rank()} get_global_ctx().batch.input_ids {get_global_ctx().batch.input_ids}")
         output = self.model.forward(get_global_ctx().batch.input_ids)
+        logger.info(f"{torch.distributed.get_rank()} output.shape {output.shape}")
         logits = self.lm_head.forward(output)
         return logits
 
