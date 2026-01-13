@@ -344,8 +344,8 @@ class TargetScheduler(Scheduler):
             needed_size = sum(r.extend_len for r in batch.reqs)
             batch.out_loc = self.cache_manager.allocate(needed_size)
             # NOTE: Pad the batch if needed
-            # if padding_size := self.engine.graph_runner.pad_batch(batch):
-            #     batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+            if padding_size := self.engine.graph_runner.pad_batch(batch):
+                batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
             # NOTE: prepare 2d indices for token ids loading and writing
             load_indices = _make_2d_indices(
                 self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
