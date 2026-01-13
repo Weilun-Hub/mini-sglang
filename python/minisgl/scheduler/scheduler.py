@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 
 import flashinfer.sampling as sampling
 
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+
 logger = init_logger(__name__)
 
 
@@ -555,6 +558,9 @@ class TargetScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     logger.debug_rank0("Request %s is finished", req)
 
+        
+        logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
+
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
@@ -834,6 +840,8 @@ class DraftScheduler(Scheduler):
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor([revise_token], device="cpu"))
 
+        logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
+        
         logger.info(f"{torch.distributed.get_rank()} [DEBUG] 2")
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
