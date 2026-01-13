@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from minisgl.core import Batch
 
 import torch
+from minisgl.utils import init_logger
+logger = init_logger(__name__)
 
 @dataclass
 class BaseAttnMetadata(ABC):
@@ -53,7 +55,7 @@ class HybridBackend(BaseAttnBackend):
         return backend.forward(q, k, v, layer_id, batch)
 
     def prepare_metadata(self, batch: Batch) -> None:
-        print(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend")
+        logger.info(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend")
         backend = self.prefill_backend if batch.is_prefill else self.decode_backend
         return backend.prepare_metadata(batch)
 
