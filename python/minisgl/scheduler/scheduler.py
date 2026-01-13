@@ -390,6 +390,8 @@ class TargetScheduler(Scheduler):
                     logits = self.engine.model.forward()
 
             # self.verify(logits, batch.reqs, sample_args)
+            for req in batch.reqs:
+                self.cached_len = self.device_len
 
             return logits
             
