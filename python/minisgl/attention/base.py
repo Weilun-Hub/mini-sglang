@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     import torch
     from minisgl.core import Batch
 
+import torch
 
 @dataclass
 class BaseAttnMetadata(ABC):
