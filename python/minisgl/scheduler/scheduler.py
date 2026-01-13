@@ -534,22 +534,22 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = False
                         logger.info(f"{torch.distributed.get_rank()} [DEBUG] next_round_input: {next_round_input[self.gamma * idx : self.gamma * (idx + 1)]}")
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-                        # req.device_len += self.gamma
+                        req.device_len += self.gamma
                     else:
                         req.pre_verify = True
                         req.append_host(torch.tensor(revise_token[idx]))
-                        # req.device_len += 1
+                        req.device_len += 1
                 else:
                     if acc[idx]:
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-                        # req.device_len += self.gamma
+                        req.device_len += self.gamma
                     else:
                         req.pre_verify = True
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
                         req.append_host(torch.tensor(revise_token[idx]))
-                        # req.device_len += 1
+                        req.device_len += 1
 
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=int(req.input_ids[-1].item()), finished=finish[idx]))
                 logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.input_ids[-1] {req.input_ids[-1]}, req.input_ids[-1].shape {req.input_ids[-1].shape}, finish[idx] = finish[{idx}] = {finish[idx]}")
@@ -841,7 +841,7 @@ class DraftScheduler(Scheduler):
                         req.append_host(torch.tensor([revise_token], device="cpu"))
 
         logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
-        
+
         logger.info(f"{torch.distributed.get_rank()} [DEBUG] 2")
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
