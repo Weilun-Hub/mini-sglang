@@ -99,6 +99,18 @@ class Batch:
             return flag
         else:
             return self.phase == "prefill"
+    
+    @property
+    def is_verify(self) -> bool:
+        if len(self.reqs) > 0:
+            flag = False
+            for req in self.reqs:
+                if req.cached_len > 0:
+                    flag = True
+                    break
+            return flag
+        else:
+            return False
 
     @property
     def is_decode(self) -> bool:
