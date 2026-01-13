@@ -505,7 +505,7 @@ class TargetScheduler(Scheduler):
                         n = self.gamma
                         is_finished = False
                         for j in range(v_idx, v_idx + self.gamma):
-                            if ((not req.ignore_eos) and judge[j]) and (to_be_verified_tokens[j] == self.eos_token_id):
+                            if ((not req.sampling_params.ignore_eos) and judge[j]) and (to_be_verified_tokens[j] == self.eos_token_id):
                                 is_finished = True
                             
                             if not judge[j]:
