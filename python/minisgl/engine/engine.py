@@ -285,7 +285,23 @@ class DraftEngine(Engine):
             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
         elif batch.phase == "decode":
-            return super().forward_batch(batch, args)
+            assert torch.cuda.current_stream() == self.stream
+            with self.ctx.forward_batch(batch):
+                if self.graph_runner.can_use_cuda_graph(batch):
+                    logits = self.graph_runner.replay(batch)
+                else:
+                    logits = self.model.forward()
+
+            for req in batch.reqs:
+                req.complete_one()
+
+            next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
+            logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
+            next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
+            copy_done_event = torch.cuda.Event()
+            copy_done_event.record()
+            return ForwardOutput(next_tokens_gpu, next_tokens_cpu, copy_done_event)
+            # return super().forward_batch(batch, args)
             # assert torch.cuda.current_stream() == self.stream
             # logger.info(f"{torch.distributed.get_rank()} self.gamma: {self.gamma}")
             # for req in batch.reqs:
