@@ -537,7 +537,9 @@ class TargetScheduler(Scheduler):
                         logger.info(f"{torch.distributed.get_rank()} [DEBUG] next_round_input: {next_round_input[self.gamma * idx : self.gamma * (idx + 1)]}")
                         # def _write_token_ids(self, input: ForwardInput, output: ForwardOutput) -> None:
                         logger.info(f"{torch.distributed.get_rank()} last_data[0].write_indices : {last_data[0].write_indices}")
-                        # self.token_pool.view(-1)[last_data[0].write_indices] = output.next_tokens_gpu
+                        logger.info(f"{torch.distributed.get_rank()} req token pool before write: {self.token_pool[req.table_idx,:20]}")
+                        self.token_pool.view(-1)[last_data[0].write_indices] = next_round_input[self.gamma * idx]
+                        logger.info(f"{torch.distributed.get_rank()} req token pool after write: {self.token_pool[req.table_idx,:20]}")
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         req.device_len += self.gamma
                     else:
@@ -545,7 +547,7 @@ class TargetScheduler(Scheduler):
                         req.append_host(torch.tensor(revise_token[idx]))
                         req.device_len += 1
                 else:
-                    
+
                     if acc[idx]:
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
