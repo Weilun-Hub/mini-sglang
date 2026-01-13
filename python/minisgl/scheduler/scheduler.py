@@ -871,8 +871,8 @@ class DraftScheduler(Scheduler):
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
 
-            for i, req in enumerate(forward_input.batch.reqs):
-                logger.info(f"{torch.distributed.get_rank()} after draft req {i}: req {req.input_ids}")
+            # for i, req in enumerate(forward_input.batch.reqs):
+            logger.info(f"{torch.distributed.get_rank()} after draft req[0]: {forward_input.batch.reqs[0]}")
             
             # self.verify(forward_input.batch.reqs)
 
