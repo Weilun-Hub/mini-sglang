@@ -358,7 +358,7 @@ class TargetScheduler(Scheduler):
                 self.page_table.view(-1)[load_indices] = batch.out_loc
             except Exception as e:
                 logger.info(f"{torch.distributed.get_rank()} damn: {e}")
-                logger.info(f"{torch.distributed.get_rank()} load_indices: {load_indices}, batch.out_loc: {batch.out_loc}")
+                logger.info(f"{torch.distributed.get_rank()} load_indices: {load_indices}, batch.out_loc: {batch.out_loc}, batch.reqs[0]: {batch.reqs[0]}")
             self.engine.attn_backend.prepare_metadata(batch)
             return ForwardInput(
                 batch=batch,
