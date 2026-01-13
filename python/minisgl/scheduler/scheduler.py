@@ -475,6 +475,8 @@ class TargetScheduler(Scheduler):
 
                 logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
                 revised_tokens = self.engine.sampler.sample(logits, sample_args)
+                for i in range(len(revised_tokens)):
+                    revised_tokens[i] = self.engine.sampler.sample(logits[i : i + 1], sample_args)
                 logger.info(f"{torch.distributed.get_rank()} Revised tokens: {revised_tokens}")
 
                 acc, rollout, revise_token, finish = [], [], [], []
