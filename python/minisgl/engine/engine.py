@@ -341,6 +341,7 @@ class TargetEngine(Engine):
                 req.complete_one()
 
             next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
+            logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
             next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
             copy_done_event = torch.cuda.Event()
             copy_done_event.record()

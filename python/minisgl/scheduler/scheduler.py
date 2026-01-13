@@ -291,6 +291,9 @@ class Scheduler(SchedulerIOMixin):
                 #     self.normal_loop()
 
                 for i in range(3):
+                    logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
+                    logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
+                    logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                     self.normal_loop()
             # import pdb; pdb.set_trace()
