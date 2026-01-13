@@ -538,7 +538,7 @@ class TargetScheduler(Scheduler):
                         # def _write_token_ids(self, input: ForwardInput, output: ForwardOutput) -> None:
                         logger.info(f"{torch.distributed.get_rank()} last_data[0].write_indices : {last_data[0].write_indices}")
                         logger.info(f"{torch.distributed.get_rank()} req token pool before write: {self.token_pool[req.table_idx,:20]}")
-                        self.token_pool.view(-1)[last_data[0].write_indices] = next_round_input[self.gamma * idx]
+                        self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = next_round_input[self.gamma * idx : self.gamma * (idx + 1)]
                         logger.info(f"{torch.distributed.get_rank()} req token pool after write: {self.token_pool[req.table_idx,:20]}")
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         req.device_len += self.gamma
