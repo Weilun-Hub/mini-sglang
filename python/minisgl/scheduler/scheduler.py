@@ -391,7 +391,7 @@ class TargetScheduler(Scheduler):
 
             # self.verify(logits, batch.reqs, sample_args)
             for req in batch.reqs:
-                self.cached_len = self.device_len
+                req.cached_len = req.device_len
 
             return logits
             
