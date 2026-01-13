@@ -474,7 +474,10 @@ class TargetScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
 
                 logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
-                revised_tokens = self.engine.sampler.sample(logits, sample_args)
+
+                # TODO: directly using logits for [n, vocab_size] returns wrong results
+                # revised_tokens = self.engine.sampler.sample(logits, sample_args)
+                revised_tokens = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.int32)
                 for i in range(len(revised_tokens)):
                     revised_tokens[i] = self.engine.sampler.sample(logits[i : i + 1], sample_args)
                 logger.info(f"{torch.distributed.get_rank()} Revised tokens: {revised_tokens}")
