@@ -89,11 +89,29 @@ class Batch:
 
     @property
     def is_prefill(self) -> bool:
-        return self.phase == "prefill"
+        if len(self.reqs) > 0:
+            flag = False
+            for req in self.reqs:
+                cur_num_new_tokens = req.device_len - req.cached_len
+                if cur_num_new_tokens > 1:
+                    flag = True
+                    break
+            return flag
+        else:
+            return self.phase == "prefill"
 
     @property
     def is_decode(self) -> bool:
-        return self.phase == "decode"
+        if len(self.reqs) > 0:
+            flag = True
+            for req in self.reqs:
+                cur_num_new_tokens = req.device_len - req.cached_len
+                if cur_num_new_tokens > 1:
+                    flag = False
+                    break
+            return flag
+        else:
+            return self.phase == "decode"
 
     @property
     def size(self) -> int:
