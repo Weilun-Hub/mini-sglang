@@ -287,7 +287,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(3):
+                for i in range(2):
                     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                     self.normal_loop()
             # import pdb; pdb.set_trace()
@@ -351,8 +351,8 @@ class TargetScheduler(Scheduler):
                 self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
             )
 
-            for req in batch.reqs:
-                req.device_len += 1 if req.pre_verify else self.gamma
+            # for req in batch.reqs:
+            #     req.device_len += 1 if req.pre_verify else self.gamma
             logger.info(f"{torch.distributed.get_rank()} batch.reqs[0]: {batch.reqs[0]}")
             write_indices = _make_2d_indices(
                 self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
