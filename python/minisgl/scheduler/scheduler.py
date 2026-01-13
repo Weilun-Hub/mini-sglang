@@ -848,7 +848,7 @@ class DraftScheduler(Scheduler):
                     else:
                         req.pre_verify = True
                         self.rollback(req, self.gamma)
-                        req.append_host(torch.tensor([revise_token[idx]], device="cpu"))
+                        req.append_host(torch.tensor([revise_token[idx : idx + 1]], device="cpu"))
                 else:
                     if acc[idx]:
                         req.pre_verify = False
@@ -857,7 +857,7 @@ class DraftScheduler(Scheduler):
                         self.rollback(req, self.gamma)
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
-                        req.append_host(torch.tensor([revise_token], device="cpu"))
+                        req.append_host(torch.tensor([revise_token[idx : idx + 1]], device="cpu"))
 
         logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
 
