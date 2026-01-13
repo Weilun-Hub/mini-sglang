@@ -566,7 +566,7 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = True
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
-                        req.append_host(torch.tensor(revise_token[idx]))
+                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         # TODO: processing token_pool
                         req.device_len += 1
 
