@@ -55,7 +55,12 @@ class HybridBackend(BaseAttnBackend):
         return backend.forward(q, k, v, layer_id, batch)
 
     def prepare_metadata(self, batch: Batch) -> None:
-        logger.info(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend")
+        num_new_tokens = []
+        for req in batch.reqs:
+            cur_num_new_tokens = req.device_len - req.cached_len
+            num_new_tokens.append(cur_num_new_tokens)
+
+        logger.info(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend is prefill: {batch.is_prefill}, num_new_tokens: {num_new_tokens}")
         backend = self.prefill_backend if batch.is_prefill else self.decode_backend
         return backend.prepare_metadata(batch)
 
