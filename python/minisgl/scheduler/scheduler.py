@@ -468,7 +468,10 @@ class TargetScheduler(Scheduler):
                 # verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
-                target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
+                target_logits = torch.zeros(logits.shape, device=logits.device, dtype=logits.dtype)
+                for i in range(logits.shape[0]):
+                    target_logits[i] = sampling.softmax(logits[i], sample_args.temperatures, enable_pdl=is_sm90_supported())
+                # target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
                 logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
@@ -599,118 +602,6 @@ class TargetScheduler(Scheduler):
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
         logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
-
-    # def verify(self, logits: torch.tensor, reqs: list[Req], sample_args: BatchSamplingArgs) -> None:
-    #     local_rank = self.tp_info.local_rank
-    #     rank = self.tp_info.rank
-
-    #     logger.info(f"{rank} Verifying logits on rank {local_rank}...")
-    #     logger.info(f'{rank} Logits shape: {logits.shape}')
-    #     logger.info(f'{rank} Sample args: {sample_args}')
-
-    #     verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
-
-    #     if local_rank == 0:
-            
-    #         num_to_be_verified_tokens = sum([1 if req.pre_verify else self.gamma for req in reqs])
-    #         num_next_round_input = self.gamma * len(reqs)
-    #         msg = torch.zeros(num_to_be_verified_tokens + num_next_round_input, dtype=torch.int64, device="cuda")
-    #         src_rank = self.tp_info.size - self.tp_info.local_size # draft rank 0
-    #         torch.distributed.broadcast(msg, src=src_rank, group=self.engine.verify_group)
-    #         to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
-    #         next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
-
-    #         logger.info(f"{torch.distributed.get_rank()} Received to_be_verified_tokens: {to_be_verified_tokens}")
-    #         logger.info(f"{torch.distributed.get_rank()} Received next_round_input: {next_round_input}")
-
-    #         # verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
-
-    #         r = torch.rand(num_to_be_verified_tokens, device="cuda")
-    #         target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
-    #         target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
-    #         judge = (r <= target_prob).tolist()
-    #         logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
-
-    #         logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
-    #         revised_tokens = self.engine.sampler.sample(logits, sample_args)
-    #         logger.info(f"{torch.distributed.get_rank()} Revised tokens: {revised_tokens}")
-
-    #         acc, rollout, revise_token, finish = [], [], [], []
-
-    #         v_idx = 0
-    #         for i, req in enumerate(reqs):
-    #             if req.pre_verify:
-    #                 acc.append(judge[v_idx])
-    #                 rollout.append(0 if judge[v_idx] else self.gamma)
-    #                 revise_token.append(revised_tokens[v_idx])
-
-    #                 if judge[v_idx]:
-    #                     req.cur_acc_tokens += 1
-    #                     # finish.append(req.)
-    #                     is_finished = not req.sampling_params.ignore_eos
-    #                     is_finished &= to_be_verified_tokens[v_idx] == self.eos_token_id
-    #                     is_finished |= req.device_len >= self.engine.max_seq_len - 1
-    #                     finish.append(is_finished)
-    #                 else:
-    #                     req.num_acc_tokens.append(req.cur_acc_tokens + 1)
-    #                     req.cur_acc_tokens = 0
-
-    #                     is_finished = not req.sampling_params.ignore_eos
-    #                     is_finished &= revise_token[-1] == self.eos_token_id
-    #                     is_finished |= req.device_len >= self.engine.max_seq_len - 1
-    #                     finish.append(is_finished)
-    #             else:
-    #                 n = self.gamma
-    #                 is_finished = False
-    #                 for j in range(v_idx, v_idx + self.gamma):
-    #                     if ((not req.ignore_eos) and judge[j]) and (to_be_verified_tokens[j] == self.eos_token_id):
-    #                         is_finished = True
-                        
-    #                     if not judge[j]:
-    #                         n = j - v_idx
-    #                         break
-                    
-    #                 acc.append(n == self.gamma)
-    #                 rollout.append(self.gamma - n)
-    #                 revise_token.append(revised_tokens[v_idx + n] if n < self.gamma else -1)
-
-    #                 is_finished |= req.device_len >= self.engine.max_seq_len - min(n + 1, self.gamma)
-    #                 finish.append(is_finished)
-
-    #                 if n == self.gamma:
-    #                     req.cur_acc_tokens += n
-    #                 else:
-    #                     req.num_acc_tokens.append(req.cur_acc_tokens + n + 1)
-    #                     req.cur_acc_tokens = 0
-                
-    #             v_idx += 1 if req.pre_verify else self.gamma
-    #         verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
-
-    #         logger.info(f"{torch.distributed.get_rank()} Verification results: {verify_res}")
-        
-    #     torch.distributed.broadcast(verify_res, src=0)
-
-    #     acc, rollout, revise_token, finish = verify_res.tolist()
-
-    #     for idx, req in enumerate(reqs):
-
-    #         if req.pre_verify:
-    #             if acc[idx]:
-    #                 req.pre_verify = False
-    #                 req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-    #             else:
-    #                 req.pre_verify = True
-    #                 req.append_host(torch.tensor(revise_token[idx]))
-    #         else:
-    #             if acc[idx]:
-    #                 req.pre_verify = False
-    #                 req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-    #             else:
-    #                 req.pre_verify = True
-    #                 if rollout[idx] > 1:
-    #                     self.rollback(req, rollout[idx] - 1)
-    #                 req.append_host(torch.tensor(revise_token[idx]))
-
 
 
 class DraftScheduler(Scheduler):
@@ -866,7 +757,7 @@ class DraftScheduler(Scheduler):
 
         logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
 
-        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 2")
+        # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 2")
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
@@ -877,11 +768,11 @@ class DraftScheduler(Scheduler):
                 self.page_table[req.table_idx, : req.cached_len],
             )
 
-        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 3")
+        # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 3")
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
-        logger.info(f"{torch.distributed.get_rank()} [DEBUG] 4")
+        # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 4")
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
@@ -910,51 +801,3 @@ class DraftScheduler(Scheduler):
 
             return forward_output
         
-    # def verify(self, reqs: list[Req]) -> None:
-    #     local_rank = get_tp_info().local_rank
-    #     rank = get_tp_info().rank
-    #     logger.info(f"{torch.distributed.get_rank()} verify called with local_rank: {local_rank}")
-    #     if local_rank == 0:
-    #         to_be_verified_tokens = []
-    #         next_round_input = []
-    #         for req in reqs:
-    #             if req.pre_verify:
-    #                 to_be_verified_tokens.append(req.input_ids[- self.gamma].numpy().tolist())
-    #             else:
-    #                 to_be_verified_tokens.extend(req.input_ids[-2 * self.gamma + 1 : - self.gamma + 1].numpy().tolist())
-    #             next_round_input.extend(req.input_ids[- self.gamma :].numpy().tolist())
-    #         logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
-    #         logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
-    #         msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
-    #         torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
-
-    #     verify_res = torch.zeros((4, len(reqs)), dtype=torch.int64, device="cuda")
-    #     torch.distributed.broadcast(verify_res, src=0)
-    #     logger.info(f"{torch.distributed.get_rank()} Received verification results: {verify_res}")
-
-    #     acc, rollout, revise_token, finish = verify_res.tolist()
-    #     for idx, req in enumerate(reqs):
-    #         if finish[idx]:
-    #             self.finished_reqs.add(req)
-    #             self.decode_manager.remove_req(req)
-    #             logger.info(f"{torch.distributed.get_rank()} Request {req.uid} is finished in verify")
-    #             continue
-
-    #         if req.pre_verify:
-    #             if acc[idx]:
-    #                 req.pre_verify = False
-    #             else:
-    #                 req.pre_verify = True
-    #                 self.rollback(req, self.gamma)
-    #                 req.append_host(torch.tensor([revise_token[idx]], device="cpu"))
-    #         else:
-    #             if acc[idx]:
-    #                 req.pre_verify = False
-    #             else:
-    #                 req.pre_verify = True
-    #                 self.rollback(req, self.gamma)
-    #                 if rollout[idx] > 1:
-    #                     self.rollback(req, rollout[idx] - 1)
-    #                 req.append_host(torch.tensor([revise_token], device="cpu"))
-
-
