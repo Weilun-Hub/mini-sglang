@@ -477,8 +477,8 @@ class TargetScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} r: {r}, target_prob: {target_prob}, sampling judge: {judge}")
 
                 original_tokens = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.int32)
-                for i in range(len(revised_tokens)):
-                    revised_tokens[i] = self.engine.sampler.sample(logits[i : i + 1], sample_args)
+                for i in range(len(original_tokens)):
+                    original_tokens[i] = self.engine.sampler.sample(logits[i : i + 1], sample_args)
                 logger.info(f"{torch.distributed.get_rank()} original tokens: {original_tokens}")
 
                 logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
