@@ -1,0 +1,260 @@
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"role": "assistant", "content": "<think>"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "\n"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "Okay"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " the"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " user"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " said"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " \""}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "Hello"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " how"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " are"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " you"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "?\""}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " need"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " to"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " respond"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " appropriately"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " First"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " should"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " acknowledge"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " their"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " greeting"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " Since"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'m"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " an"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " AI"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " don"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'t"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " have"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " feelings"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " but"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " can"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " say"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'m"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " doing"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " well"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " should"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " keep"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " the"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " response"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " friendly"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " and"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " open"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "-ended"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " to"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " encourage"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " them"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " to"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " share"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " more"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " Maybe"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " add"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " an"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " emoji"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " to"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " keep"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " it"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " light"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " Let"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " me"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " check"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " the"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " example"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " response"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " It"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " says"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " \""}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "Hello"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "!"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'m"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " just"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " a"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " virtual"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " assistant"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " so"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " don"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'t"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " have"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " feelings"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": ","}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " but"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'m"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " here"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " and"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " ready"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " to"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " help"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "!"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " How"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " are"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " you"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " today"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "?"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " "}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "\ud83d\ude0a"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "\""}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " That"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "'s"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " good"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": "."}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " I"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " can"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " use"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " a"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {"content": " similar"}, "index": 0, "finish_reason": null}]}
+
+data: {"id": "cmpl-0", "object": "text_completion.chunk", "choices": [{"delta": {}, "index": 0, "finish_reason": "stop"}]}
+
+data: [DONE]
+
