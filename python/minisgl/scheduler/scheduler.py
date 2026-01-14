@@ -765,7 +765,7 @@ class DraftScheduler(Scheduler):
                     else:
                         req.pre_verify = True
                         logger.info(f"{torch.distributed.get_rank()} before roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
-                        self.rollback(req, self.gamma)
+                        self.rollback(req, self.gamma - 1)
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
                         
