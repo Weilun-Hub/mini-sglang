@@ -588,7 +588,7 @@ class TargetScheduler(Scheduler):
                         logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        # TODO: processing token_pool
+
                         req.device_len += 1
                         logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
 
@@ -764,10 +764,16 @@ class DraftScheduler(Scheduler):
                         req.pre_verify = False
                     else:
                         req.pre_verify = True
+                        logger.info(f"{torch.distributed.get_rank()} before roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         self.rollback(req, self.gamma)
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
+                        logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
+                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+
+                        req.device_len += 1
+                        logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
 
         logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
 
