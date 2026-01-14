@@ -587,8 +587,10 @@ class TargetScheduler(Scheduler):
 
                         logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
+                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx]: last_data[0].write_indices - rollout[idx] + 1] = revise_token[idx : idx + 1]
                         # TODO: processing token_pool
                         req.device_len += 1
+                        logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
 
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=int(req.input_ids[-1].item()), finished=finish[idx]))
                 logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.input_ids[-1] {req.input_ids[-1]}, req.input_ids[-1].shape {req.input_ids[-1].shape}, finish[idx] = finish[{idx}] = {finish[idx]}")
