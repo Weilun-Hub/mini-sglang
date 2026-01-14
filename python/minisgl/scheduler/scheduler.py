@@ -568,8 +568,10 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        logger.info(f"{torch.distributed.get_rank()} before write: req.device_len {req.device_len}, req.cached_len {req.cached_len}, req token pool before write: {self.token_pool[req.table_idx,:30]}")
                         self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
                         req.device_len += self.gamma
+                        logger.info(f"{torch.distributed.get_rank()} after write: req.device_len {req.device_len}, req.cached_len {req.cached_len}, req token pool before write: {self.token_pool[req.table_idx,:30]}")
                     else:
                         req.pre_verify = True
                         if rollout[idx] > 1:
@@ -601,7 +603,7 @@ class TargetScheduler(Scheduler):
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         self.send_result(reply)
-        logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
+        # logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
 
 
 class DraftScheduler(Scheduler):
