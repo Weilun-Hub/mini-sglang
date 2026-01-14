@@ -207,6 +207,9 @@ class FlashInferBackend(BaseAttnBackend):
             cu_seqlens_q_cpu = cu_seqlens_k_cpu
         else:  # normal extend prefill, with partial cache hit
             cu_seqlens_q_cpu = torch.tensor([0] + seqlens_q, **cpu_kwargs).cumsum_(dim=0)
+        
+        logger.info(f"{torch.distributed.get_rank()}: fi page_table: {self.page_table[reqs[0].table_idx, :reqs[0].device_len + 2]}")
+        
         batch.attn_metadata = FIMetadata(
             positions=make_positions(device, reqs),
             cu_seqlens_q_cpu=cu_seqlens_q_cpu,

@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from minisgl.kvcache import BaseKVCache
     from minisgl.models import ModelConfig
 
+from minisgl.utils import init_logger
+logger = init_logger(__name__)
 
 @dataclass
 class FACaptureData(BaseCaptureData):
@@ -92,6 +94,8 @@ class FlashAttentionBackend(BaseAttnBackend):
         positions = make_positions(device, reqs)
         page_table = self.page_table
         new_page_table = torch.stack([page_table[req.table_idx, :max_seqlen_k] for req in reqs])
+
+        logger.info(f"{torch.distributed.get_rank()}: fa page_table: {page_table[reqs[0].table_idx, :max_seqlen_k + 2]}")
 
         # copy from CPU to GPU
         batch.attn_metadata = FAMetadata(
