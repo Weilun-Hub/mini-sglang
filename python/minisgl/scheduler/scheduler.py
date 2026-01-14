@@ -290,7 +290,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(7):
+                for i in range(10):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
