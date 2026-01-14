@@ -475,7 +475,7 @@ class TargetScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} logits.device: {logits.device}, logits.dtype: {logits.dtype}")
                 for i in range(logits.shape[0]):
                     target_logits[i : i + 1] = sampling.softmax(logits[i : i + 1], sample_args.temperatures, enable_pdl=is_sm90_supported())
-                    logger.info(f"{torch.distributed.get_rank()} i = {i}, min target_logit = {target_logits[i : i + 1].min()}, max target_logit = {target_logits[i : i + 1].max()}")
+                    logger.info(f"{torch.distributed.get_rank()} i = {i}, min target_logit = {target_logits[i : i + 1].min()}, max target_logit = {target_logits[i : i + 1].max()}, argmax = {target_logits[i : i + 1].argmax(dim=-1)}")
                 
                 # target_logits = torch.softmax(logits / sample_args.temperatures.unsqueeze(dim=1), dim=-1).to(logits.dtype)
 
