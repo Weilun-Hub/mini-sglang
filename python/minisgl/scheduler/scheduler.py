@@ -579,8 +579,11 @@ class TargetScheduler(Scheduler):
                         logger.info(f"{torch.distributed.get_rank()} after write: req.device_len {req.device_len}, req.cached_len {req.cached_len}, req token pool before write: {self.token_pool[req.table_idx,:30]}")
                     else:
                         req.pre_verify = True
+                        logger.info(f"{torch.distributed.get_rank()} before roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
+
+                        logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         # TODO: processing token_pool
                         req.device_len += 1
