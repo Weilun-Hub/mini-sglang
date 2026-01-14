@@ -769,7 +769,7 @@ class DraftScheduler(Scheduler):
                         self.rollback(req, self.gamma - 1)
                         # req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
                         req.input_ids[-1] = revise_token[idx]
-                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + self.gamma: last_data[0].write_indices - rollout[idx] + self.gamma + 1] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
                         logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                 else:
                     if acc[idx]:
@@ -785,7 +785,7 @@ class DraftScheduler(Scheduler):
                         logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         # req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
                         req.input_ids[-1] = revise_token[idx]
-                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + self.gamma: last_data[0].write_indices - rollout[idx] + self.gamma + 1] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
                         # req.device_len += 1
                         logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
