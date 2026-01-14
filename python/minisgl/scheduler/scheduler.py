@@ -290,7 +290,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(6):
+                for i in range(7):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
@@ -760,7 +760,7 @@ class DraftScheduler(Scheduler):
                     logger.info(f"{torch.distributed.get_rank()} Request {req.uid} is finished in verify")
                     continue
                 
-                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, acc[idx] = acc[{idx}] = {finish[idx]}")
+                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, acc[idx] = acc[{idx}] = {acc[idx]}")
                 if req.pre_verify:
                     if acc[idx]:
                         req.pre_verify = False
