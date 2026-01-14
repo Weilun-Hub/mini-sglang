@@ -474,7 +474,7 @@ class TargetScheduler(Scheduler):
                 # target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
-                logger.info(f"{torch.distributed.get_rank()} Sampling judge: {judge}")
+                logger.info(f"{torch.distributed.get_rank()} r: {r}, target_prob: {target_prob}, sampling judge: {judge}")
 
                 logits.scatter_(1, msg[:num_to_be_verified_tokens].unsqueeze(1), float('-inf'))
 
