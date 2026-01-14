@@ -315,6 +315,8 @@ class Scheduler(SchedulerIOMixin):
         self.cache_manager.rollback(
             self.page_table[req.table_idx, req.cached_len - n : req.cached_len]
         )
+        logger.info(f"{torch.distributed.get_rank()} original page table: {self.page_table[req.table_idx, :30]}")
+        logger.info(f"{torch.distributed.get_rank()} page table to be freeed: {self.page_table[req.table_idx, req.cached_len - n : req.cached_len]}")
         req.rollback(n)
 
 
