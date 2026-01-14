@@ -566,10 +566,12 @@ class TargetScheduler(Scheduler):
                     else:
                         # TODO: not tested
                         req.pre_verify = True
+                        logger.info(f"{torch.distributed.get_rank()} before roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
                         self.token_pool.view(-1)[last_data[0].write_indices] = _tokens
                         req.device_len += 1
+                        logger.info(f"{torch.distributed.get_rank()} after revise: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                 else:
 
                     if acc[idx]:
