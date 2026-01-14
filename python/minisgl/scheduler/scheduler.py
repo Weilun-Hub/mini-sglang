@@ -768,6 +768,8 @@ class DraftScheduler(Scheduler):
                         self.rollback(req, self.gamma)
                         if rollout[idx] > 1:
                             self.rollback(req, rollout[idx] - 1)
+                        
+                        req.cached_len = req.device_len
                         logger.info(f"{torch.distributed.get_rank()} after roll back: req: {req}, req token pool: {self.token_pool[req.table_idx,:30]}")
                         req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
                         self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
