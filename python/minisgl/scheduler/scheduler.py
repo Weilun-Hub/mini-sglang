@@ -566,7 +566,7 @@ class TargetScheduler(Scheduler):
                     else:
                         # TODO: not tested
                         req.pre_verify = True
-                        req.append_host(torch.tensor(revise_token[idx]))
+                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
                         self.token_pool.view(-1)[last_data[0].write_indices] = _tokens
                         req.device_len += 1
