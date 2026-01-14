@@ -290,7 +290,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(10):
+                for i in range(5):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
@@ -474,6 +474,7 @@ class TargetScheduler(Scheduler):
                 target_logits = torch.zeros(logits.shape, device=logits.device, dtype=logits.dtype)
                 for i in range(logits.shape[0]):
                     target_logits[i : i + 1] = sampling.softmax(logits[i : i + 1], sample_args.temperatures, enable_pdl=is_sm90_supported())
+                    logger.info(f"{torch.distributed.get_rank()} i = {i}, min target_logit = {target_logits[i : i + 1].min()}, max target_logit = {target_logits[i : i + 1].max()}")
                 
                 # target_logits = torch.softmax(logits / sample_args.temperatures.unsqueeze(dim=1), dim=-1).to(logits.dtype)
 
