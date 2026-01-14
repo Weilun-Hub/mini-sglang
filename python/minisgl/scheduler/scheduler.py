@@ -564,6 +564,7 @@ class TargetScheduler(Scheduler):
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         req.device_len += self.gamma
                     else:
+                        # TODO: not tested
                         req.pre_verify = True
                         req.append_host(torch.tensor(revise_token[idx]))
                         _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
@@ -756,9 +757,12 @@ class DraftScheduler(Scheduler):
                     if acc[idx]:
                         req.pre_verify = False
                     else:
+                        # TODO: not tested
                         req.pre_verify = True
-                        self.rollback(req, self.gamma)
-                        req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
+                        self.rollback(req, self.gamma - 1)
+                        # req.append_host(torch.tensor(revise_token[idx : idx + 1], device="cpu"))
+                        req.input_ids[-1] = revise_token[idx]
+                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
                 else:
                     if acc[idx]:
                         req.pre_verify = False
