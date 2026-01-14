@@ -290,7 +290,7 @@ class Scheduler(SchedulerIOMixin):
                 # while True:
                 #     self.normal_loop()
 
-                for i in range(12):
+                for i in range(13):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
@@ -545,7 +545,7 @@ class TargetScheduler(Scheduler):
                         else:
                             req.num_acc_tokens.append(req.cur_acc_tokens + n + 1)
                             req.cur_acc_tokens = 0
-                    
+                    logger.info(f"{torch.distributed.get_rank()} req.num_acc_tokens: {req.num_acc_tokens}")
                     v_idx += 1 if req.pre_verify else self.gamma
                 verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
 
