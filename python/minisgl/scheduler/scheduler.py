@@ -471,11 +471,11 @@ class TargetScheduler(Scheduler):
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
                 
-                # target_logits = torch.zeros(logits.shape, device=logits.device, dtype=logits.dtype)
-                # for i in range(logits.shape[0]):
-                #     target_logits[i : i + 1] = sampling.softmax(logits[i : i + 1], sample_args.temperatures, enable_pdl=is_sm90_supported())
+                target_logits = torch.zeros(logits.shape, device=logits.device, dtype=logits.dtype)
+                for i in range(logits.shape[0]):
+                    target_logits[i : i + 1] = sampling.softmax(logits[i : i + 1], sample_args.temperatures, enable_pdl=is_sm90_supported())
                 
-                target_logits = torch.softmax(logits / sample_args.temperatures.unsqueeze(dim=1), dim=-1).to(logits.dtype)
+                # target_logits = torch.softmax(logits / sample_args.temperatures.unsqueeze(dim=1), dim=-1).to(logits.dtype)
 
                 # target_logits = sampling.softmax(logits, sample_args.temperatures, enable_pdl=is_sm90_supported())
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
