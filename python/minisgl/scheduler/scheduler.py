@@ -303,8 +303,14 @@ class Scheduler(SchedulerIOMixin):
         else:
             assert torch.cuda.current_stream() == self.stream
             data = None
-            while True:
+            # while True:
+            #     data = self.overlap_loop(data)
+            
+            for i in range(13):
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 data = self.overlap_loop(data)
+
+            import time; time.sleep(3600)
 
     def shutdown(self) -> None:
         torch.cuda.synchronize(self.device)
