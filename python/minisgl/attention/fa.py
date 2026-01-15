@@ -95,7 +95,7 @@ class FlashAttentionBackend(BaseAttnBackend):
         page_table = self.page_table
         new_page_table = torch.stack([page_table[req.table_idx, :max_seqlen_k] for req in reqs])
 
-        logger.info(f"{torch.distributed.get_rank()}: fa page_table: {page_table[reqs[0].table_idx, :max_seqlen_k + 2]}")
+        # logger.info(f"{torch.distributed.get_rank()}: fa page_table: {page_table[reqs[0].table_idx, :max_seqlen_k + 2]}")
 
         # copy from CPU to GPU
         batch.attn_metadata = FAMetadata(
