@@ -222,6 +222,10 @@ class Scheduler(SchedulerIOMixin):
             self.prefill_manager.schedule_next_batch(self.prefill_budget)
             or self.decode_manager.schedule_next_batch()
         )
+
+        if batch.phase == "decode":
+            self.decode_manager.verify_done.synchronize()
+        
         return self._prepare_batch(batch) if batch else None
 
     def _load_token_ids(self, input: ForwardInput) -> None:
@@ -634,6 +638,9 @@ class TargetScheduler(Scheduler):
 
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
+        
+        self.decode_manager.verify_done.record()
+        
         self.send_result(reply)
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
 
@@ -820,6 +827,7 @@ class DraftScheduler(Scheduler):
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 3")
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
+        self.decode_manager.verify_done.record()
         self.send_result(reply)
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 4")
 
