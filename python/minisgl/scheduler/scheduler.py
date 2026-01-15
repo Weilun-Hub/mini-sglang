@@ -310,7 +310,7 @@ class Scheduler(SchedulerIOMixin):
             # while True:
             #     data = self.overlap_loop(data)
             
-            for i in range(1):
+            for i in range(2):
                 torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 data = self.overlap_loop(data)
 
