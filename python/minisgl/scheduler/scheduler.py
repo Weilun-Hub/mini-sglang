@@ -349,61 +349,61 @@ class TargetScheduler(Scheduler):
         super().__init__(config)
         self.gamma = 3
 
-    def _prepare_batch(self, batch: Batch) -> ForwardInput:
-        if batch.phase == "prefill":
-            return super()._prepare_batch(batch)
-        elif batch.phase == "decode":
-            # needed_size = 0
-            # _write_indices = []
-            # for req in batch.reqs:
-            #     cur_needed_size = 1 if req.pre_verify else self.gamma
-            #     needed_size += cur_needed_size
-            #     _write_indices.append((req.table_idx, req.device_len, req.device_len + cur_needed_size))
+    # def _prepare_batch(self, batch: Batch) -> ForwardInput:
+    #     if batch.phase == "prefill":
+    #         return super()._prepare_batch(batch)
+    #     elif batch.phase == "decode":
+    #         # needed_size = 0
+    #         # _write_indices = []
+    #         # for req in batch.reqs:
+    #         #     cur_needed_size = 1 if req.pre_verify else self.gamma
+    #         #     needed_size += cur_needed_size
+    #         #     _write_indices.append((req.table_idx, req.device_len, req.device_len + cur_needed_size))
 
-            # batch.out_loc = self.cache_manager.allocate(needed_size)
-            # if padding_size := self.engine.graph_runner.pad_batch(batch):
-            #     batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+    #         # batch.out_loc = self.cache_manager.allocate(needed_size)
+    #         # if padding_size := self.engine.graph_runner.pad_batch(batch):
+    #         #     batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
 
-            # load_indices = _make_2d_indices(
-            #     self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
-            # )
-            # write_indices = _make_2d_indices(
-            #     self.token_pool, _write_indices
-            # )
+    #         # load_indices = _make_2d_indices(
+    #         #     self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+    #         # )
+    #         # write_indices = _make_2d_indices(
+    #         #     self.token_pool, _write_indices
+    #         # )
 
-            # logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:20]}")
-            needed_size = sum(r.extend_len for r in batch.reqs)
-            batch.out_loc = self.cache_manager.allocate(needed_size)
-            # NOTE: Pad the batch if needed
-            if padding_size := self.engine.graph_runner.pad_batch(batch):
-                batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
-            # NOTE: prepare 2d indices for token ids loading and writing
-            load_indices = _make_2d_indices(
-                self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
-            )
+    #         # logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:20]}")
+    #         needed_size = sum(r.extend_len for r in batch.reqs)
+    #         batch.out_loc = self.cache_manager.allocate(needed_size)
+    #         # NOTE: Pad the batch if needed
+    #         if padding_size := self.engine.graph_runner.pad_batch(batch):
+    #             batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+    #         # NOTE: prepare 2d indices for token ids loading and writing
+    #         load_indices = _make_2d_indices(
+    #             self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+    #         )
 
-            # for req in batch.reqs:
-            #     req.device_len += 1 if req.pre_verify else self.gamma
-            logger.info(f"{torch.distributed.get_rank()} batch.reqs[0]: {batch.reqs[0]}")
-            write_indices = _make_2d_indices(
-                self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
-            )
+    #         # for req in batch.reqs:
+    #         #     req.device_len += 1 if req.pre_verify else self.gamma
+    #         logger.info(f"{torch.distributed.get_rank()} batch.reqs[0]: {batch.reqs[0]}")
+    #         write_indices = _make_2d_indices(
+    #             self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
+    #         )
 
-            self.page_table.view(-1)[load_indices] = batch.out_loc
+    #         self.page_table.view(-1)[load_indices] = batch.out_loc
             
-            # NOTE: write out_loc to page_table before `prepare_metadata
-            # try:
-            #     self.page_table.view(-1)[load_indices] = batch.out_loc
-            # except Exception as e:
-            #     logger.info(f"{torch.distributed.get_rank()} damn: {e}")
-            #     logger.info(f"{torch.distributed.get_rank()} load_indices: {load_indices}, batch.out_loc: {batch.out_loc}, batch.reqs[0]: {batch.reqs[0]}")
-            self.engine.attn_backend.prepare_metadata(batch)
-            return ForwardInput(
-                batch=batch,
-                sample_args=self.engine.sampler.prepare(batch),
-                load_indices=load_indices,
-                write_indices=write_indices,
-            )
+    #         # NOTE: write out_loc to page_table before `prepare_metadata
+    #         # try:
+    #         #     self.page_table.view(-1)[load_indices] = batch.out_loc
+    #         # except Exception as e:
+    #         #     logger.info(f"{torch.distributed.get_rank()} damn: {e}")
+    #         #     logger.info(f"{torch.distributed.get_rank()} load_indices: {load_indices}, batch.out_loc: {batch.out_loc}, batch.reqs[0]: {batch.reqs[0]}")
+    #         self.engine.attn_backend.prepare_metadata(batch)
+    #         return ForwardInput(
+    #             batch=batch,
+    #             sample_args=self.engine.sampler.prepare(batch),
+    #             load_indices=load_indices,
+    #             write_indices=write_indices,
+    #         )
     
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
@@ -686,30 +686,30 @@ class DraftScheduler(Scheduler):
             logger.error(f"Unknown message type: {type(msg)}")
             raise NotImplementedError
 
-    def _prepare_batch(self, batch: Batch) -> ForwardInput:
-        logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:30]}")
-        needed_size = sum(r.extend_len for r in batch.reqs)
-        batch.out_loc = self.cache_manager.allocate(needed_size)
-        logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with extend_len {[r.extend_len for r in batch.reqs]}, out_loc: {batch.out_loc}")
-        # NOTE: Pad the batch if needed
-        if padding_size := self.engine.graph_runner.pad_batch(batch):
-            batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
-        # NOTE: prepare 2d indices for token ids loading and writing
-        load_indices = _make_2d_indices(
-            self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
-        )
-        write_indices = _make_2d_indices(
-            self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
-        )
-        # NOTE: write out_loc to page_table before `prepare_metadata`
-        self.page_table.view(-1)[load_indices] = batch.out_loc
-        self.engine.attn_backend.prepare_metadata(batch)
-        return ForwardInput(
-            batch=batch,
-            sample_args=self.engine.sampler.prepare(batch),
-            load_indices=load_indices,
-            write_indices=write_indices,
-        )
+    # def _prepare_batch(self, batch: Batch) -> ForwardInput:
+    #     logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:30]}")
+    #     needed_size = sum(r.extend_len for r in batch.reqs)
+    #     batch.out_loc = self.cache_manager.allocate(needed_size)
+    #     logger.info(f"{torch.distributed.get_rank()} DraftScheduler _prepare_batch for batch with extend_len {[r.extend_len for r in batch.reqs]}, out_loc: {batch.out_loc}")
+    #     # NOTE: Pad the batch if needed
+    #     if padding_size := self.engine.graph_runner.pad_batch(batch):
+    #         batch.out_loc = F.pad(batch.out_loc, (0, padding_size), value=self.engine.dummy_page)
+    #     # NOTE: prepare 2d indices for token ids loading and writing
+    #     load_indices = _make_2d_indices(
+    #         self.token_pool, [(r.table_idx, r.cached_len, r.device_len) for r in batch.padded_reqs]
+    #     )
+    #     write_indices = _make_2d_indices(
+    #         self.token_pool, [(r.table_idx, r.device_len, r.device_len + 1) for r in batch.reqs]
+    #     )
+    #     # NOTE: write out_loc to page_table before `prepare_metadata`
+    #     self.page_table.view(-1)[load_indices] = batch.out_loc
+    #     self.engine.attn_backend.prepare_metadata(batch)
+    #     return ForwardInput(
+    #         batch=batch,
+    #         sample_args=self.engine.sampler.prepare(batch),
+    #         load_indices=load_indices,
+    #         write_indices=write_indices,
+    #     )
 
     def _process_last_data(
         self, last_data: ForwardData | None, ongoing_data: ForwardData | None
