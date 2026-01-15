@@ -647,7 +647,7 @@ class TargetScheduler(Scheduler):
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         
-        self.decode_manager.verify_done.record()
+        self.decode_manager.verify_done.record(torch.cuda.current_stream())
         
         self.send_result(reply)
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] after self.send_result")
@@ -835,7 +835,7 @@ class DraftScheduler(Scheduler):
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 3")
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
-        self.decode_manager.verify_done.record()
+        self.decode_manager.verify_done.record(torch.cuda.current_stream())
         self.send_result(reply)
         # logger.info(f"{torch.distributed.get_rank()} [DEBUG] 4")
 
