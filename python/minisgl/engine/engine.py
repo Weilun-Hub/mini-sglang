@@ -261,7 +261,7 @@ class DraftEngine(Engine):
         self.gamma = None
         self.token_pool = None
 
-        logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
+        # logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
@@ -296,7 +296,7 @@ class DraftEngine(Engine):
                 req.complete_one()
 
             next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
-            logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
+            # logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
             next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
             copy_done_event = torch.cuda.Event()
             copy_done_event.record()
@@ -337,12 +337,12 @@ class DraftEngine(Engine):
 class TargetEngine(Engine):
     def __init__(self, config: EngineConfig):
         super().__init__(config)
-        logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
+        # logger.info(f"world rank: {torch.distributed.get_rank()}, local rank: {config.tp_info.local_rank}, Initialized {config.tp_info.role.value} Engine")
 
     def forward_batch(self, batch: Batch, args: BatchSamplingArgs) -> ForwardOutput:
         if batch.phase == "prefill":
             forward_output = super().forward_batch(batch, args)
-            logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed")
+            # logger.info(f"{torch.distributed.get_rank()} TargetEngine forward_batch prefill completed")
             torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             return forward_output
         elif batch.phase == "decode":
@@ -357,7 +357,7 @@ class TargetEngine(Engine):
                 req.complete_one()
 
             next_tokens_gpu = self.sampler.sample(logits[: batch.size], args).to(torch.int32)
-            logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
+            # logger.info(f"{torch.distributed.get_rank()} next_tokens_gpu: {next_tokens_gpu}")
             next_tokens_cpu = next_tokens_gpu.to("cpu", non_blocking=True)
             copy_done_event = torch.cuda.Event()
             copy_done_event.record()
