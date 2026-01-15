@@ -7,7 +7,7 @@ export CUDA_LAUNCH_BLOCKING=1
 
 export CUDA_VISIBLE_DEVICES="4,5"
 
-export MINISGL_DISABLE_OVERLAP_SCHEDULING=1
+# export MINISGL_DISABLE_OVERLAP_SCHEDULING=1
 
 TARGET_PATH="/media/disk1/models/Qwen3-14B"
 DRAFT_PATH="/home/relay/liujiacheng06/models/Qwen3-0.6B"
