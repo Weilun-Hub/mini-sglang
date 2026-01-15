@@ -223,10 +223,18 @@ class Scheduler(SchedulerIOMixin):
             or self.decode_manager.schedule_next_batch()
         )
 
-        if batch.phase == "decode":
-            self.decode_manager.verify_done.synchronize()
+        if batch is None:
+            return None
         
-        return self._prepare_batch(batch) if batch else None
+        with torch.cuda.stream(self.stream):
+            if  batch.phase == "decode":
+                self.stream.wait_event(self.decode_manager.verify_done)
+            return self._prepare_batch(batch)
+
+        # if batch.phase == "decode":
+        #     self.decode_manager.verify_done.synchronize()
+        
+        # return self._prepare_batch(batch) if batch else None
 
     def _load_token_ids(self, input: ForwardInput) -> None:
         input.batch.input_ids = self.token_pool.view(-1)[input.load_indices]
