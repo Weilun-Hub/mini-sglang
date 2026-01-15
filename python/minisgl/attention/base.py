@@ -63,7 +63,7 @@ class HybridBackend(BaseAttnBackend):
             # if cur_num_new_tokens > 1:
             #     flag = True
         
-        logger.info(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend is prefill: {batch.is_prefill}, num_new_tokens: {num_new_tokens}")
+        # logger.info(f"{torch.distributed.get_rank()} prepare_metadata of hybrid backend is prefill: {batch.is_prefill}, num_new_tokens: {num_new_tokens}")
         backend = self.prefill_backend if batch.is_prefill else self.decode_backend
         # backend = self.prefill_backend if flag else self.decode_backend
         return backend.prepare_metadata(batch)

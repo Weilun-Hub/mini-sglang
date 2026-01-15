@@ -511,18 +511,18 @@ class TargetScheduler(Scheduler):
                         else:
                             req.num_acc_tokens.append(req.cur_acc_tokens + n + 1)
                             req.cur_acc_tokens = 0
-                    logger.info(f"{torch.distributed.get_rank()} req.num_acc_tokens: {req.num_acc_tokens}")
+                    # logger.info(f"{torch.distributed.get_rank()} req.num_acc_tokens: {req.num_acc_tokens}")
                     v_idx += 1 if req.pre_verify else self.gamma
                 verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
 
-                logger.info(f"{torch.distributed.get_rank()} Verification results: {verify_res}")
+                # logger.info(f"{torch.distributed.get_rank()} Verification results: {verify_res}")
             
             torch.distributed.broadcast(verify_res, src=0)
 
             acc, rollout, revise_token, finish = verify_res.tolist()
 
             for idx, req in enumerate(batch.reqs):
-                logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, finish[idx] = finish[{idx}] = {finish[idx]}, acc[idx] = acc[{idx}] = {acc[idx]}")
+                # logger.info(f"{torch.distributed.get_rank()} [DEBUG] req.pre_verify = {req.pre_verify}, finish[idx] = finish[{idx}] = {finish[idx]}, acc[idx] = acc[{idx}] = {acc[idx]}")
                 if req.pre_verify:
                     if acc[idx]:
                         req.pre_verify = False
