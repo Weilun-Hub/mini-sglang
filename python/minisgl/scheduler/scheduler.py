@@ -601,7 +601,7 @@ class TargetScheduler(Scheduler):
         for req in self.finished_reqs.difference(ongoing_reqs):
             self.table_manager.free(req.table_idx)
             self.cache_manager.free_and_cache_finished_req(
-                req.cache_handle,
+                req.cache_handle.to(torch.int32),
                 req.input_ids[: req.cached_len],
                 self.page_table[req.table_idx, : req.cached_len],
             )
@@ -728,7 +728,7 @@ class DraftScheduler(Scheduler):
             self.table_manager.free(req.table_idx)
             self.cache_manager.free_and_cache_finished_req(
                 req.cache_handle,
-                req.input_ids[: req.cached_len],
+                req.input_ids[: req.cached_len].to(torch.int32),
                 self.page_table[req.table_idx, : req.cached_len],
             )
 

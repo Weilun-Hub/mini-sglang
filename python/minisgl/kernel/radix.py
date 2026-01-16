@@ -19,15 +19,15 @@ def _load_radix_module() -> Module:
 def fast_compare_key(x: torch.Tensor, y: torch.Tensor) -> int:
     # compare 2 1-D int cpu tensors for equality
 
-    print(
-        f"{torch.distributed.get_rank()} [fast_compare_key] x:",
-        x.shape, x.dtype, x.device,
-        "| y:",
-        y.shape, y.dtype, y.device,
-    )
+    # print(
+    #     f"{torch.distributed.get_rank()} [fast_compare_key] x:",
+    #     x.shape, x.dtype, x.device,
+    #     "| y:",
+    #     y.shape, y.dtype, y.device,
+    # )
      
-    assert x.dim() == 1 and y.dim() == 1, "x/y must be 1-D"
-    x = x.to(device="cpu", dtype=torch.int32)
-    y = y.to(device="cpu", dtype=torch.int32)
+    # assert x.dim() == 1 and y.dim() == 1, "x/y must be 1-D"
+    # x = x.to(device="cpu", dtype=torch.int32)
+    # y = y.to(device="cpu", dtype=torch.int32)
 
     return _load_radix_module().fast_compare_key(x, y)
