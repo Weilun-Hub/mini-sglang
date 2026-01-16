@@ -406,7 +406,7 @@ class TargetScheduler(Scheduler):
 
                 logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens {to_be_verified_tokens}")
                 logger.info(f"{torch.distributed.get_rank()} next_round_input {next_round_input}")
-                logger.info(f"{torch.distributed.get_rank()} logits.shape {target_logits.shape}")
+                logger.info(f"{torch.distributed.get_rank()} logits.shape {logits.shape}")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
                 
