@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Dict, NamedTuple, Tuple
+from typing import Dict, NamedTuple, Tuple, List
 
 from copy import deepcopy
 
@@ -28,6 +28,7 @@ class ForwardOutput(NamedTuple):
 
 class VerifyOutput(NamedTuple):
     verify_results_gpu: torch.Tensor
+    next_round_input: List
     verify_done_event: torch.cuda.Event
 
 def create_page_table(shape: Tuple[int, int], device: torch.device) -> torch.Tensor:
