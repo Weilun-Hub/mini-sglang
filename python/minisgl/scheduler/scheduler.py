@@ -1083,7 +1083,7 @@ class DraftScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
                 msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
                 torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
-
+            logger.info(f"{torch.distributed.get_rank()} draft group finish broadcast msg")
             verify_res = torch.zeros((4, len(batch.reqs)), dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(verify_res, src=0)
 
