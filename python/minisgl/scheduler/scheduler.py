@@ -197,7 +197,7 @@ class Scheduler(SchedulerIOMixin):
             raise NotImplementedError
 
     def _prepare_batch(self, batch: Batch) -> ForwardInput:
-        logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:30]}")
+        # logger.info(f"{torch.distributed.get_rank()} _prepare_batch {batch.reqs[0]}, slot {self.token_pool[batch.reqs[0].table_idx][:30]}")
         needed_size = sum(r.extend_len for r in batch.reqs)
         batch.out_loc = self.cache_manager.allocate(needed_size)
         # NOTE: Pad the batch if needed
