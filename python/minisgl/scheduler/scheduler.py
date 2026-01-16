@@ -235,8 +235,8 @@ class Scheduler(SchedulerIOMixin):
         #         self.stream.wait_event(self.decode_manager.verify_done)
         #     return self._prepare_batch(batch)
 
-        if batch.phase == "decode":
-            self.decode_manager.verify_done.synchronize()
+        # if batch.phase == "decode":
+        #     self.decode_manager.verify_done.synchronize()
         
         return self._prepare_batch(batch) if batch else None
 
@@ -598,7 +598,7 @@ class TargetScheduler(Scheduler):
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
         
-        self.decode_manager.verify_done.record(torch.cuda.current_stream())
+        # self.decode_manager.verify_done.record(torch.cuda.current_stream())
         
         self.send_result(reply)
 
