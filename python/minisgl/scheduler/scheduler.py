@@ -235,8 +235,8 @@ class Scheduler(SchedulerIOMixin):
         #         self.stream.wait_event(self.decode_manager.verify_done)
         #     return self._prepare_batch(batch)
 
-        if batch.phase == "decode":
-            self.decode_manager.verify_done.synchronize()
+        # if batch.phase == "decode":
+        #     self.decode_manager.verify_done.synchronize()
         
         return self._prepare_batch(batch) if batch else None
 
@@ -499,7 +499,7 @@ class TargetScheduler(Scheduler):
 
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
-            self.decode_manager.verify_done.record(torch.cuda.current_stream())
+            # self.decode_manager.verify_done.record(torch.cuda.current_stream())
             return VerifyOutput(verify_res, next_round_input, verify_done_event)
         
             
