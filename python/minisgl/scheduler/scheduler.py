@@ -310,7 +310,7 @@ class Scheduler(SchedulerIOMixin):
                 #     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 #     self.normal_loop()
 
-                for i in range(13):
+                for i in range(20):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
