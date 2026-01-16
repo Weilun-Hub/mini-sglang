@@ -94,7 +94,7 @@ class PrefillAdder:
         if self.token_budget <= 0:
             return None
 
-        print("pending_req.input_ids.dtype", pending_req.input_ids.dtype)
+        print(f"{torch.distributed.get_rank()} pending_req.input_ids.dtype", pending_req.input_ids.dtype)
         if chunked_req := pending_req.chunked_req:
             return self._add_one_req(
                 pending_req=pending_req,
