@@ -323,8 +323,9 @@ class Scheduler(SchedulerIOMixin):
         else:
             assert torch.cuda.current_stream() == self.stream
             data = None
-            # while True:
-            #     data = self.overlap_loop(data)
+            while True:
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                data = self.overlap_loop(data)
             
             for i in range(13):
                 logger.info(f"{torch.distributed.get_rank()} +------------------------- step {i} -------------------------+")
