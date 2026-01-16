@@ -138,7 +138,9 @@ class Scheduler(SchedulerIOMixin):
             logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {i}: next_token_id {next_tokens_cpu[i]}")
 
             next_token_id = next_tokens_cpu[i]
+            logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
             req.append_host(next_token_id.unsqueeze(0))
+            logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
             next_token = int(next_token_id.item())
             finished = req.remain_len <= 0
             if not req.sampling_params.ignore_eos:
@@ -382,6 +384,9 @@ class TargetScheduler(Scheduler):
                 # logger.info(f"{torch.distributed.get_rank()} verify group finish receive msg")
                 to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
                 next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
+
+                logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens {to_be_verified_tokens}")
+                logger.info(f"{torch.distributed.get_rank()} next_round_input {next_round_input}")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
                 
