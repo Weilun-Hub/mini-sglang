@@ -69,6 +69,7 @@ class Req:
 
     def __repr__(self) -> str:
         return (
+            f"uid={self.uid}, "
             f"input_ids={self.input_ids}, pre_verfiy={self.pre_verify}, "
             f"{type(self)}(table_idx={self.table_idx}, "
             f"cached_len={self.cached_len}, device_len={self.device_len}, "
