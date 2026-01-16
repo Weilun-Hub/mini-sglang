@@ -546,7 +546,7 @@ class TargetScheduler(Scheduler):
 
                 next_token_id = next_tokens_cpu[i]
                 # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
-                req.append_host(next_token_id.unsqueeze(0))
+                # req.append_host(next_token_id.unsqueeze(0))
                 # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
                 next_token = int(next_token_id.item())
                 finished = req.remain_len <= 0
