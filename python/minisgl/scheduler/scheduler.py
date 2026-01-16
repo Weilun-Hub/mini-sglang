@@ -305,7 +305,7 @@ class Scheduler(SchedulerIOMixin):
                 #     self.normal_loop()
 
                 while True:
-                    torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                    # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                     self.normal_loop()
 
                 # for i in range(13):
