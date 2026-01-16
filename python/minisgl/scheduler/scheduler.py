@@ -462,39 +462,39 @@ class TargetScheduler(Scheduler):
 
             torch.distributed.broadcast(verify_res, src=0)
             # logger.info(f"{torch.distributed.get_rank()} verify group finish broadcast verify_res")
-            # acc, rollout, revise_token, finish = verify_res.tolist()
+            acc, rollout, revise_token, finish = verify_res.tolist()
 
-            # for idx, req in enumerate(batch.reqs):
-            #     if req.pre_verify:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
-            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-            #             req.device_len += self.gamma
-            #         else:
-            #             req.pre_verify = True
-            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-            #             _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[forward_input.write_indices] = _tokens
-            #             req.device_len += 1
-            #     else:
+            for idx, req in enumerate(batch.reqs):
+                if req.pre_verify:
+                    if acc[idx]:
+                        req.pre_verify = False
+                        _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
+                        req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+                        req.device_len += self.gamma
+                    else:
+                        req.pre_verify = True
+                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
+                        _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[forward_input.write_indices] = _tokens
+                        req.device_len += 1
+                else:
 
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
-            #             req.device_len += self.gamma
-            #         else:
-            #             req.pre_verify = True
-            #             if rollout[idx] > 1:
-            #                 self.rollback(req, rollout[idx] - 1)
+                    if acc[idx]:
+                        req.pre_verify = False
+                        req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+                        _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
+                        req.device_len += self.gamma
+                    else:
+                        req.pre_verify = True
+                        if rollout[idx] > 1:
+                            self.rollback(req, rollout[idx] - 1)
 
-            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-            #             self.token_pool.view(-1)[forward_input.write_indices - rollout[idx] + 1: forward_input.write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
+                        self.token_pool.view(-1)[forward_input.write_indices - rollout[idx] + 1: forward_input.write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
-            #             req.device_len += 1
+                        req.device_len += 1
 
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
@@ -551,37 +551,37 @@ class TargetScheduler(Scheduler):
 
             acc, rollout, revise_token, finish = verify_res.tolist()
 
-            for idx, req in enumerate(batch.reqs):
-                if req.pre_verify:
-                    if acc[idx]:
-                        req.pre_verify = False
-                        _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
-                        req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-                        req.device_len += self.gamma
-                    else:
-                        req.pre_verify = True
-                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-                        _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        self.token_pool.view(-1)[last_data[0].write_indices] = _tokens
-                        req.device_len += 1
-                else:
+            # for idx, req in enumerate(batch.reqs):
+            #     if req.pre_verify:
+            #         if acc[idx]:
+            #             req.pre_verify = False
+            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
+            #             self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
+            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+            #             req.device_len += self.gamma
+            #         else:
+            #             req.pre_verify = True
+            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
+            #             _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
+            #             self.token_pool.view(-1)[last_data[0].write_indices] = _tokens
+            #             req.device_len += 1
+            #     else:
 
-                    if acc[idx]:
-                        req.pre_verify = False
-                        req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-                        _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
-                        req.device_len += self.gamma
-                    else:
-                        req.pre_verify = True
-                        if rollout[idx] > 1:
-                            self.rollback(req, rollout[idx] - 1)
+            #         if acc[idx]:
+            #             req.pre_verify = False
+            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
+            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
+            #             self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
+            #             req.device_len += self.gamma
+            #         else:
+            #             req.pre_verify = True
+            #             if rollout[idx] > 1:
+            #                 self.rollback(req, rollout[idx] - 1)
 
-                        req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-                        self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
+            #             self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
-                        req.device_len += 1
+            #             req.device_len += 1
 
             for idx, req in enumerate(batch.reqs):
                 
@@ -684,31 +684,31 @@ class DraftScheduler(Scheduler):
             verify_done.synchronize()
             
             acc, rollout, revise_token, finish = verify_res.tolist()
-            for idx, req in enumerate(batch.reqs):
-                if req in self.finished_reqs or isinstance(req, ChunkedReq):
-                    continue
-                if finish[idx]:
-                    continue
+            # for idx, req in enumerate(batch.reqs):
+            #     if req in self.finished_reqs or isinstance(req, ChunkedReq):
+            #         continue
+            #     if finish[idx]:
+            #         continue
                 
-                if req.pre_verify:
-                    if acc[idx]:
-                        req.pre_verify = False
-                    else:
-                        req.pre_verify = True
-                        self.rollback(req, self.gamma - 1)
-                        req.input_ids[-1] = revise_token[idx]
-                        self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
-                else:
-                    if acc[idx]:
-                        req.pre_verify = False
-                    else:
-                        req.pre_verify = True
-                        self.rollback(req, self.gamma - 1)
-                        if rollout[idx] > 1:
-                            self.rollback(req, rollout[idx] - 1)
+            #     if req.pre_verify:
+            #         if acc[idx]:
+            #             req.pre_verify = False
+            #         else:
+            #             req.pre_verify = True
+            #             self.rollback(req, self.gamma - 1)
+            #             req.input_ids[-1] = revise_token[idx]
+            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
+            #     else:
+            #         if acc[idx]:
+            #             req.pre_verify = False
+            #         else:
+            #             req.pre_verify = True
+            #             self.rollback(req, self.gamma - 1)
+            #             if rollout[idx] > 1:
+            #                 self.rollback(req, rollout[idx] - 1)
                         
-                        req.input_ids[-1] = revise_token[idx]
-                        self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
+            #             req.input_ids[-1] = revise_token[idx]
+            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
             for idx, req in enumerate(batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
@@ -786,32 +786,32 @@ class DraftScheduler(Scheduler):
             torch.distributed.broadcast(verify_res, src=0)
             # logger.info(f"{torch.distributed.get_rank()} draft group finish receive verify_res")
 
-            # acc, rollout, revise_token, finish = verify_res.tolist()
-            # for idx, req in enumerate(batch.reqs):
-            #     if req in self.finished_reqs or isinstance(req, ChunkedReq):
-            #         continue
-            #     if finish[idx]:
-            #         continue
+            acc, rollout, revise_token, finish = verify_res.tolist()
+            for idx, req in enumerate(batch.reqs):
+                if req in self.finished_reqs or isinstance(req, ChunkedReq):
+                    continue
+                if finish[idx]:
+                    continue
                 
-            #     if req.pre_verify:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #         else:
-            #             req.pre_verify = True
-            #             self.rollback(req, self.gamma - 1)
-            #             req.input_ids[-1] = revise_token[idx]
-            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
-            #     else:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #         else:
-            #             req.pre_verify = True
-            #             self.rollback(req, self.gamma - 1)
-            #             if rollout[idx] > 1:
-            #                 self.rollback(req, rollout[idx] - 1)
+                if req.pre_verify:
+                    if acc[idx]:
+                        req.pre_verify = False
+                    else:
+                        req.pre_verify = True
+                        self.rollback(req, self.gamma - 1)
+                        req.input_ids[-1] = revise_token[idx]
+                        self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
+                else:
+                    if acc[idx]:
+                        req.pre_verify = False
+                    else:
+                        req.pre_verify = True
+                        self.rollback(req, self.gamma - 1)
+                        if rollout[idx] > 1:
+                            self.rollback(req, rollout[idx] - 1)
                         
-            #             req.input_ids[-1] = revise_token[idx]
-            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
+                        req.input_ids[-1] = revise_token[idx]
+                        self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
 
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
