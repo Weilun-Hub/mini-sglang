@@ -27,5 +27,7 @@ def fast_compare_key(x: torch.Tensor, y: torch.Tensor) -> int:
     )
      
     assert x.dim() == 1 and y.dim() == 1, "x/y must be 1-D"
+    x = x.to(device="cpu", dtype=torch.int32)
+    y = y.to(device="cpu", dtype=torch.int32)
 
     return _load_radix_module().fast_compare_key(x, y)
