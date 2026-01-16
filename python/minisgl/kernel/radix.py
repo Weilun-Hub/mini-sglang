@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     import torch
     from tvm_ffi import Module
 
+import torch
 
 @lru_cache(maxsize=None)
 def _load_radix_module() -> Module:
