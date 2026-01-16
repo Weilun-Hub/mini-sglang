@@ -326,9 +326,9 @@ class Scheduler(SchedulerIOMixin):
             # while True:
             #     data = self.overlap_loop(data)
             
-            for i in range(2):
+            for i in range(13):
                 logger.info(f"{torch.distributed.get_rank()} +------------------------- step {i} -------------------------+")
-                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 data = self.overlap_loop(data)
 
             import time; time.sleep(3600)
