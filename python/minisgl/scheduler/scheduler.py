@@ -416,7 +416,7 @@ class TargetScheduler(Scheduler):
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
 
-                logger.info(f"{torch.distributed.get_rank()} r {to_be_verified_tokens}, target_prob {target_prob}, judge {judge}")
+                logger.info(f"{torch.distributed.get_rank()} r {r}, target_prob {target_prob}, judge {judge}")
 
                 original_tokens = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.int32)
                 for i in range(len(original_tokens)):
