@@ -355,7 +355,9 @@ class TargetScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            return super()._forward(forward_input)
+            output = super()._forward(forward_input)
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            return output
         elif forward_input.batch.phase == "decode":
             self._load_token_ids(forward_input)
             batch, sample_args = forward_input.batch, forward_input.sample_args
@@ -732,7 +734,10 @@ class DraftScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            return super()._forward(forward_input)
+            # return super()._forward(forward_input)
+            output = super()._forward(forward_input)
+            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            return output
         elif forward_input.batch.phase == "decode":
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
