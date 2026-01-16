@@ -233,8 +233,8 @@ class Scheduler(SchedulerIOMixin):
         #         self.stream.wait_event(self.decode_manager.verify_done)
         #     return self._prepare_batch(batch)
 
-        # if batch.phase == "decode":
-        #     self.decode_manager.verify_done.synchronize()
+        if batch.phase == "decode":
+            self.decode_manager.verify_done.synchronize()
         
         return self._prepare_batch(batch) if batch else None
 
@@ -379,7 +379,7 @@ class TargetScheduler(Scheduler):
                 msg = torch.zeros(num_to_be_verified_tokens + num_next_round_input, dtype=torch.int64, device="cuda")
                 src_rank = self.tp_info.size - self.tp_info.local_size # draft rank 0
                 torch.distributed.broadcast(msg, src=src_rank, group=self.engine.verify_group)
-                logger.info(f"{torch.distributed.get_rank()} verify group finish receive msg")
+                # logger.info(f"{torch.distributed.get_rank()} verify group finish receive msg")
                 to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
                 next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
 
@@ -454,7 +454,7 @@ class TargetScheduler(Scheduler):
                 verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
 
             torch.distributed.broadcast(verify_res, src=0)
-            logger.info(f"{torch.distributed.get_rank()} verify group finish broadcast verify_res")
+            # logger.info(f"{torch.distributed.get_rank()} verify group finish broadcast verify_res")
             acc, rollout, revise_token, finish = verify_res.tolist()
 
             for idx, req in enumerate(batch.reqs):
@@ -491,6 +491,7 @@ class TargetScheduler(Scheduler):
 
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
+            self.decode_manager.verify_done.record(torch.cuda.current_stream())
             return VerifyOutput(verify_res, verify_done_event)
         
             
@@ -697,10 +698,10 @@ class DraftScheduler(Scheduler):
                 logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
                 msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
                 torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
-            logger.info(f"{torch.distributed.get_rank()} draft group finish broadcast msg")
+            # logger.info(f"{torch.distributed.get_rank()} draft group finish broadcast msg")
             verify_res = torch.zeros((4, len(batch.reqs)), dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(verify_res, src=0)
-            logger.info(f"{torch.distributed.get_rank()} draft group finish receive verify_res")
+            # logger.info(f"{torch.distributed.get_rank()} draft group finish receive verify_res")
 
             acc, rollout, revise_token, finish = verify_res.tolist()
             for idx, req in enumerate(batch.reqs):
@@ -732,5 +733,3 @@ class DraftScheduler(Scheduler):
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
             return VerifyOutput(verify_res, verify_done_event)
-            # return forward_output
-        
