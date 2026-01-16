@@ -356,9 +356,25 @@ class TargetScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            return super()._forward(forward_input)
+            # return super()._forward(forward_input)
             # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             # return output
+            # return super()._forward(forward_input)
+            output = super()._forward(forward_input)
+            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            _, next_tokens_cpu, copy_done = output
+            copy_done.synchronize()
+            # max_seq_len = self.engine.max_seq_len
+            for i, req in enumerate(forward_input.batch.reqs):
+                if req in self.finished_reqs or isinstance(req, ChunkedReq):
+                    continue
+
+                next_token_id = next_tokens_cpu[i]
+                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
+                req.append_host(next_token_id.unsqueeze(0))
+                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
+                # next_token = int(next_token_id.item())
+            return output
         elif forward_input.batch.phase == "decode":
             self._load_token_ids(forward_input)
             batch, sample_args = forward_input.batch, forward_input.sample_args
@@ -502,7 +518,6 @@ class TargetScheduler(Scheduler):
 
             verify_done_event = torch.cuda.Event()
             verify_done_event.record()
-            # self.decode_manager.verify_done.record(torch.cuda.current_stream())
             return VerifyOutput(verify_res, next_round_input, verify_done_event)
         
             
@@ -519,7 +534,7 @@ class TargetScheduler(Scheduler):
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
             # logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
-            copy_done.synchronize()
+            # copy_done.synchronize()
             # logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
 
             max_seq_len = self.engine.max_seq_len
@@ -554,38 +569,6 @@ class TargetScheduler(Scheduler):
             verify_done.synchronize()
 
             acc, rollout, revise_token, finish = verify_res.tolist()
-
-            # for idx, req in enumerate(batch.reqs):
-            #     if req.pre_verify:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
-            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-            #             req.device_len += self.gamma
-            #         else:
-            #             req.pre_verify = True
-            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-            #             _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[last_data[0].write_indices] = _tokens
-            #             req.device_len += 1
-            #     else:
-
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #             req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
-            #             _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-            #             self.token_pool.view(-1)[last_data[0].write_indices : last_data[0].write_indices + self.gamma] = _tokens
-            #             req.device_len += self.gamma
-            #         else:
-            #             req.pre_verify = True
-            #             if rollout[idx] > 1:
-            #                 self.rollback(req, rollout[idx] - 1)
-
-            #             req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-            #             self.token_pool.view(-1)[last_data[0].write_indices - rollout[idx] + 1: last_data[0].write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
-
-            #             req.device_len += 1
 
             for idx, req in enumerate(batch.reqs):
                 
