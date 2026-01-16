@@ -581,8 +581,8 @@ class TargetScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     logger.debug_rank0("Request %s is finished", req)
 
-        
-        logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
+        for i in range(len(batch.reqs)):
+            logger.info(f"{torch.distributed.get_rank()} after process_last_data req[{i}]: {batch.reqs[i]}")
 
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
@@ -709,7 +709,8 @@ class DraftScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     continue
         
-        logger.info(f"{torch.distributed.get_rank()} after process_last_data req[0]: {batch.reqs[0]}")
+        for i in range(len(batch.reqs)):
+            logger.info(f"{torch.distributed.get_rank()} after process_last_data req[{i}]: {batch.reqs[i]}")
 
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
@@ -755,7 +756,9 @@ class DraftScheduler(Scheduler):
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
 
-            logger.info(f"{torch.distributed.get_rank()} after draft req[0]: {forward_input.batch.reqs[0]}")
+            for i in range(len(forward_input.batch.reqs)):
+                logger.info(f"{torch.distributed.get_rank()} after draft req[{i}]: {forward_input.batch.reqs[i]}")
+            
 
             local_rank = get_tp_info().local_rank
             rank = get_tp_info().rank
