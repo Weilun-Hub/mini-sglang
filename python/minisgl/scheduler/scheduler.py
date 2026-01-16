@@ -740,7 +740,7 @@ class DraftScheduler(Scheduler):
             _, next_tokens_cpu, copy_done = output
             copy_done.synchronize()
             # max_seq_len = self.engine.max_seq_len
-            for i, req in enumerate(batch.reqs):
+            for i, req in enumerate(forward_input.batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
 
