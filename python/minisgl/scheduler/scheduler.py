@@ -29,7 +29,9 @@ from minisgl.distributed.info import Role, get_tp_info
 from minisgl.core import Req
 
 if TYPE_CHECKING:
-    from minisgl.engine import BatchSamplingArgs, ForwardOutput, VerifyOutput
+    from minisgl.engine import BatchSamplingArgs, ForwardOutput
+
+from minisgl.engine import VerifyOutput
 
 import flashinfer.sampling as sampling
 
