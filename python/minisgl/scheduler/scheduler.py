@@ -472,7 +472,7 @@ class TargetScheduler(Scheduler):
                         _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
                         # print("[DEBUG] forward_input.write_indices",forward_input.write_indices, forward_input.write_indices.dtype)
-                        self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
+                        self.token_pool.view(-1)[forward_input.write_indices[idx] : forward_input.write_indices[idx] + self.gamma] = _tokens
                         
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         req.device_len += self.gamma
@@ -480,7 +480,7 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = True
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
                         _tokens = torch.as_tensor(revise_token[idx], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        self.token_pool.view(-1)[forward_input.write_indices] = _tokens
+                        self.token_pool.view(-1)[forward_input.write_indices[idx]] = _tokens
                         req.device_len += 1
                 else:
 
@@ -488,7 +488,7 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = False
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
+                        self.token_pool.view(-1)[forward_input.write_indices[idx] : forward_input.write_indices[idx] + self.gamma] = _tokens
                         req.device_len += self.gamma
                     else:
                         req.pre_verify = True
@@ -496,7 +496,7 @@ class TargetScheduler(Scheduler):
                             self.rollback(req, rollout[idx] - 1)
 
                         req.append_host(torch.tensor(revise_token[idx : idx + 1]))
-                        self.token_pool.view(-1)[forward_input.write_indices - rollout[idx] + 1: forward_input.write_indices - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
+                        self.token_pool.view(-1)[forward_input.write_indices[idx] - rollout[idx] + 1: forward_input.write_indices[idx] - rollout[idx] + 2] = torch.as_tensor(revise_token[idx : idx + 1], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
                         req.device_len += 1
 
