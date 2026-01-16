@@ -404,8 +404,8 @@ class TargetScheduler(Scheduler):
                 to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
                 next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
 
-                logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens {to_be_verified_tokens}")
-                logger.info(f"{torch.distributed.get_rank()} next_round_input {next_round_input}")
+                # logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens {to_be_verified_tokens}")
+                # logger.info(f"{torch.distributed.get_rank()} next_round_input {next_round_input}")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
                 
@@ -416,7 +416,7 @@ class TargetScheduler(Scheduler):
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
 
-                logger.info(f"{torch.distributed.get_rank()} r {r}, target_prob {target_prob}, judge {judge}")
+                # logger.info(f"{torch.distributed.get_rank()} r {r}, target_prob {target_prob}, judge {judge}")
 
                 original_tokens = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.int32)
                 for i in range(len(original_tokens)):
