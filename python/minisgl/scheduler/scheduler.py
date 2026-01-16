@@ -328,7 +328,7 @@ class Scheduler(SchedulerIOMixin):
             
             for i in range(2):
                 logger.info(f"{torch.distributed.get_rank()} +------------------------- step {i} -------------------------+")
-                # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+                torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 data = self.overlap_loop(data)
 
             import time; time.sleep(3600)
@@ -355,9 +355,9 @@ class TargetScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            output = super()._forward(forward_input)
-            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            return output
+            return super()._forward(forward_input)
+            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            # return output
         elif forward_input.batch.phase == "decode":
             self._load_token_ids(forward_input)
             batch, sample_args = forward_input.batch, forward_input.sample_args
@@ -734,10 +734,10 @@ class DraftScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            # return super()._forward(forward_input)
-            output = super()._forward(forward_input)
-            torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            return output
+            return super()._forward(forward_input)
+            # output = super()._forward(forward_input)
+            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
+            # return output
         elif forward_input.batch.phase == "decode":
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
