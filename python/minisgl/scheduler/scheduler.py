@@ -675,31 +675,7 @@ class DraftScheduler(Scheduler):
             verify_done.synchronize()
             
             acc, rollout, revise_token, finish = verify_res.tolist()
-            # for idx, req in enumerate(batch.reqs):
-            #     if req in self.finished_reqs or isinstance(req, ChunkedReq):
-            #         continue
-            #     if finish[idx]:
-            #         continue
-                
-            #     if req.pre_verify:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #         else:
-            #             req.pre_verify = True
-            #             self.rollback(req, self.gamma - 1)
-            #             req.input_ids[-1] = revise_token[idx]
-            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
-            #     else:
-            #         if acc[idx]:
-            #             req.pre_verify = False
-            #         else:
-            #             req.pre_verify = True
-            #             self.rollback(req, self.gamma - 1)
-            #             if rollout[idx] > 1:
-            #                 self.rollback(req, rollout[idx] - 1)
-                        
-            #             req.input_ids[-1] = revise_token[idx]
-            #             self.token_pool[req.table_idx][len(req.input_ids) - 1] = revise_token[idx]
+
             for idx, req in enumerate(batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
