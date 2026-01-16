@@ -310,7 +310,7 @@ class Scheduler(SchedulerIOMixin):
                 #     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 #     self.normal_loop()
 
-                for i in range(40):
+                for i in range(10):
                     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
                     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
@@ -756,8 +756,8 @@ class DraftScheduler(Scheduler):
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
 
-            for i in range(len(forward_input.batch.reqs)):
-                logger.info(f"{torch.distributed.get_rank()} after draft req[{i}]: {forward_input.batch.reqs[i]}")
+            # for i in range(len(forward_input.batch.reqs)):
+            #     logger.info(f"{torch.distributed.get_rank()} after draft req[{i}]: {forward_input.batch.reqs[i]}")
             
 
             local_rank = get_tp_info().local_rank
