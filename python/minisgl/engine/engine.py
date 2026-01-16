@@ -26,6 +26,9 @@ class ForwardOutput(NamedTuple):
     next_tokens_cpu: torch.Tensor
     copy_done_event: torch.cuda.Event
 
+class VerifyOutput(NamedTuple):
+    verify_results_gpu: torch.Tensor
+    verify_done_event: torch.cuda.Event
 
 def create_page_table(shape: Tuple[int, int], device: torch.device) -> torch.Tensor:
     return torch.zeros(shape, dtype=torch.int32, device=device)
