@@ -654,7 +654,7 @@ class DraftScheduler(Scheduler):
 
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
-            copy_done.synchronize()
+            # copy_done.synchronize()
             max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
@@ -662,7 +662,7 @@ class DraftScheduler(Scheduler):
 
                 next_token_id = next_tokens_cpu[i]
                 logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
-                req.append_host(next_token_id.unsqueeze(0))
+                # req.append_host(next_token_id.unsqueeze(0))
                 logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
                 next_token = int(next_token_id.item())
                 finished = req.remain_len <= 0
@@ -734,10 +734,22 @@ class DraftScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            return super()._forward(forward_input)
-            # output = super()._forward(forward_input)
+            # return super()._forward(forward_input)
+            output = super()._forward(forward_input)
             # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            # return output
+            _, next_tokens_cpu, copy_done = output
+            copy_done.synchronize()
+            # max_seq_len = self.engine.max_seq_len
+            for i, req in enumerate(batch.reqs):
+                if req in self.finished_reqs or isinstance(req, ChunkedReq):
+                    continue
+
+                next_token_id = next_tokens_cpu[i]
+                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
+                req.append_host(next_token_id.unsqueeze(0))
+                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
+                # next_token = int(next_token_id.item())
+            return output
         elif forward_input.batch.phase == "decode":
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
