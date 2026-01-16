@@ -470,11 +470,9 @@ class TargetScheduler(Scheduler):
                     if acc[idx]:
                         req.pre_verify = False
                         _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
-                        try:
-                            self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
-                        except Exception as e:
-                            print("[DEBUG]",forward_input.write_indices, forward_input.write_indices.dtype)
-                            raise RuntimeError
+
+                        print("[DEBUG] forward_input.write_indices",forward_input.write_indices, forward_input.write_indices.dtype)
+                        self.token_pool.view(-1)[forward_input.write_indices : forward_input.write_indices + self.gamma] = _tokens
                         
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
                         req.device_len += self.gamma
