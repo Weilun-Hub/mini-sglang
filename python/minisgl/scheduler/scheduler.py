@@ -379,6 +379,7 @@ class TargetScheduler(Scheduler):
                 msg = torch.zeros(num_to_be_verified_tokens + num_next_round_input, dtype=torch.int64, device="cuda")
                 src_rank = self.tp_info.size - self.tp_info.local_size # draft rank 0
                 torch.distributed.broadcast(msg, src=src_rank, group=self.engine.verify_group)
+                logger.info(f"{torch.distributed.get_rank()} verify group finish receive msg")
                 to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
                 next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
 
@@ -452,6 +453,8 @@ class TargetScheduler(Scheduler):
                     v_idx += 1 if req.pre_verify else self.gamma
                 verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
 
+            torch.distributed.broadcast(verify_res, src=0)
+            logger.info(f"{torch.distributed.get_rank()} verify group finish broadcast verify_res")
             acc, rollout, revise_token, finish = verify_res.tolist()
 
             for idx, req in enumerate(batch.reqs):
