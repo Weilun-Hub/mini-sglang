@@ -125,9 +125,7 @@ class Scheduler(SchedulerIOMixin):
         if last_data is None:
             return
         batch, (_, next_tokens_cpu, copy_done) = last_data[0].batch, last_data[1]
-        # logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
         copy_done.synchronize()
-        # logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
         reply = BatchTokenizerMsg(data=[])
 
         max_seq_len = self.engine.max_seq_len
@@ -135,12 +133,8 @@ class Scheduler(SchedulerIOMixin):
             if req in self.finished_reqs or isinstance(req, ChunkedReq):
                 continue
 
-            # logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {i}: next_token_id {next_tokens_cpu[i]}")
-
             next_token_id = next_tokens_cpu[i]
-            # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
             req.append_host(next_token_id.unsqueeze(0))
-            # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
             next_token = int(next_token_id.item())
             finished = req.remain_len <= 0
             if not req.sampling_params.ignore_eos:
@@ -226,17 +220,6 @@ class Scheduler(SchedulerIOMixin):
             self.prefill_manager.schedule_next_batch(self.prefill_budget)
             or self.decode_manager.schedule_next_batch()
         )
-
-        # if batch is None:
-        #     return None
-        
-        # with torch.cuda.stream(self.stream):
-        #     if  batch.phase == "decode":
-        #         self.stream.wait_event(self.decode_manager.verify_done)
-        #     return self._prepare_batch(batch)
-
-        # if batch.phase == "decode":
-        #     self.decode_manager.verify_done.synchronize()
         
         return self._prepare_batch(batch) if batch else None
 
@@ -303,23 +286,11 @@ class Scheduler(SchedulerIOMixin):
         if ENV.DISABLE_OVERLAP_SCHEDULING:
             with self.engine_stream_ctx:
                 self.engine.stream.wait_stream(self.stream)
-                # while True:
-                #     self.normal_loop()
 
                 while True:
                     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                     self.normal_loop()
-
-                # for i in range(10):
-                #     logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
-                #     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
-                #     # logger.info(f"{torch.distributed.get_rank()} ========================= step {i} =========================")
-                #     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-                #     self.normal_loop()
-            # import pdb; pdb.set_trace()
-            
-            # import time; time.sleep(3600)
-
+                
         else:
             assert torch.cuda.current_stream() == self.stream
             data = None
@@ -327,13 +298,6 @@ class Scheduler(SchedulerIOMixin):
                 torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
                 data = self.overlap_loop(data)
             
-            # for i in range(13):
-            #     logger.info(f"{torch.distributed.get_rank()} +------------------------- step {i} -------------------------+")
-            #     torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            #     data = self.overlap_loop(data)
-
-            # import time; time.sleep(3600)
-
     def shutdown(self) -> None:
         torch.cuda.synchronize(self.device)
         self.sync_all_ranks()
@@ -343,8 +307,6 @@ class Scheduler(SchedulerIOMixin):
         self.cache_manager.rollback(
             self.page_table[req.table_idx, req.cached_len - n : req.cached_len]
         )
-        # logger.info(f"{torch.distributed.get_rank()} original page table: {self.page_table[req.table_idx, :30]}")
-        # logger.info(f"{torch.distributed.get_rank()} page table to be freeed: {self.page_table[req.table_idx, req.cached_len - n : req.cached_len]}")
         req.rollback(n)
 
 
@@ -356,29 +318,19 @@ class TargetScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            # return super()._forward(forward_input)
-            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
-            # return output
-            # return super()._forward(forward_input)
             output = super()._forward(forward_input)
-            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             _, next_tokens_cpu, copy_done = output
             copy_done.synchronize()
-            # max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(forward_input.batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
 
                 next_token_id = next_tokens_cpu[i]
-                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
                 req.append_host(next_token_id.unsqueeze(0))
-                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
-                # next_token = int(next_token_id.item())
             return output
         elif forward_input.batch.phase == "decode":
             self._load_token_ids(forward_input)
             batch, sample_args = forward_input.batch, forward_input.sample_args
-            # logger.info(f"{torch.distributed.get_rank()} Starting forward for {batch.phase}: {batch.input_ids}")
             assert torch.cuda.current_stream() == self.engine.stream
             with self.engine.ctx.forward_batch(batch):
                 if self.engine.graph_runner.can_use_cuda_graph(batch):
@@ -400,13 +352,8 @@ class TargetScheduler(Scheduler):
                 msg = torch.zeros(num_to_be_verified_tokens + num_next_round_input, dtype=torch.int64, device="cuda")
                 src_rank = self.tp_info.size - self.tp_info.local_size # draft rank 0
                 torch.distributed.broadcast(msg, src=src_rank, group=self.engine.verify_group)
-                # logger.info(f"{torch.distributed.get_rank()} verify group finish receive msg")
                 to_be_verified_tokens = msg[:num_to_be_verified_tokens].cpu().numpy().tolist()
                 next_round_input = msg[num_to_be_verified_tokens:].cpu().numpy().tolist()
-
-                # logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens {to_be_verified_tokens}")
-                # logger.info(f"{torch.distributed.get_rank()} next_round_input {next_round_input}")
-                # logger.info(f"{torch.distributed.get_rank()} logits.shape {logits.shape}")
 
                 r = torch.rand(num_to_be_verified_tokens, device="cuda")
                 
@@ -416,8 +363,6 @@ class TargetScheduler(Scheduler):
 
                 target_prob = target_logits.gather(dim=1, index=msg[:num_to_be_verified_tokens].unsqueeze(1)).squeeze(1)
                 judge = (r <= target_prob).tolist()
-
-                # logger.info(f"{torch.distributed.get_rank()} r {r}, target_prob {target_prob}, judge {judge}")
 
                 original_tokens = torch.zeros(logits.shape[0], device=logits.device, dtype=torch.int32)
                 for i in range(len(original_tokens)):
@@ -481,7 +426,6 @@ class TargetScheduler(Scheduler):
                 verify_res = torch.tensor([acc, rollout, revise_token, finish], dtype=torch.int64, device="cuda")
 
             torch.distributed.broadcast(verify_res, src=0)
-            # logger.info(f"{torch.distributed.get_rank()} verify group finish broadcast verify_res")
             acc, rollout, revise_token, finish = verify_res.tolist()
 
             for idx, req in enumerate(batch.reqs):
@@ -490,7 +434,6 @@ class TargetScheduler(Scheduler):
                         req.pre_verify = False
                         _tokens = torch.as_tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)], dtype=self.token_pool.dtype, device=self.token_pool.device)
 
-                        # print("[DEBUG] forward_input.write_indices",forward_input.write_indices, forward_input.write_indices.dtype)
                         self.token_pool.view(-1)[forward_input.write_indices[idx] : forward_input.write_indices[idx] + self.gamma] = _tokens
                         
                         req.append_host(torch.tensor(next_round_input[self.gamma * idx : self.gamma * (idx + 1)]))
@@ -536,21 +479,13 @@ class TargetScheduler(Scheduler):
 
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
-            # logger.info(f"{torch.distributed.get_rank()} _process_last_data before copy_done.synchronize()")
-            # copy_done.synchronize()
-            # logger.info(f"{torch.distributed.get_rank()} _process_last_data after copy_done.synchronize()")
 
             max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
 
-                # logger.info(f"{torch.distributed.get_rank()} Processing results for batch with req {i}: next_token_id {next_tokens_cpu[i]}")
-
                 next_token_id = next_tokens_cpu[i]
-                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
-                # req.append_host(next_token_id.unsqueeze(0))
-                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
                 next_token = int(next_token_id.item())
                 finished = req.remain_len <= 0
                 if not req.sampling_params.ignore_eos:
@@ -560,7 +495,6 @@ class TargetScheduler(Scheduler):
                     logger.warning_rank0(f"Request {req.uid} reached {max_seq_len = }, dropped.")
                 reply.data.append(DetokenizeMsg(uid=req.uid, next_token=next_token, finished=finished))
 
-                # logger.info(f"{torch.distributed.get_rank()} appended next_token {next_token}, finished: {finished}")
                 # free resources if the req is finished and not ongoing
                 if finished:
                     self.finished_reqs.add(req)
@@ -582,9 +516,6 @@ class TargetScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     logger.debug_rank0("Request %s is finished", req)
 
-        # for i in range(len(batch.reqs)):
-        #     logger.info(f"{torch.distributed.get_rank()} after process_last_data req[{i}]: {batch.reqs[i]}  token pool {self.token_pool[req.table_idx][:30]}")
-
         # free resources for finished but not ongoing reqs
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
@@ -597,8 +528,6 @@ class TargetScheduler(Scheduler):
 
         # keep only ongoing reqs in the finished set
         self.finished_reqs.intersection_update(ongoing_reqs)
-        
-        # self.decode_manager.verify_done.record(torch.cuda.current_stream())
         
         self.send_result(reply)
 
@@ -645,16 +574,12 @@ class DraftScheduler(Scheduler):
 
         if batch.phase == "prefill":
             _, next_tokens_cpu, copy_done = last_data[1]
-            # copy_done.synchronize()
             max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
 
                 next_token_id = next_tokens_cpu[i]
-                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
-                # req.append_host(next_token_id.unsqueeze(0))
-                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
                 next_token = int(next_token_id.item())
                 finished = req.remain_len <= 0
                 if not req.sampling_params.ignore_eos:
@@ -686,9 +611,6 @@ class DraftScheduler(Scheduler):
                     self.decode_manager.remove_req(req)
                     continue
         
-        # for i in range(len(batch.reqs)):
-        #     logger.info(f"{torch.distributed.get_rank()} after process_last_data req[{i}]: {batch.reqs[i]} token_pool {self.token_pool[req.table_idx][:30]}")
-
         ongoing_reqs = ongoing_data[0].batch.reqs if ongoing_data else []
         for req in self.finished_reqs.difference(ongoing_reqs):
             self.table_manager.free(req.table_idx)
@@ -703,27 +625,20 @@ class DraftScheduler(Scheduler):
 
     def _forward(self, forward_input: ForwardInput) -> ForwardOutput:
         if forward_input.batch.phase == "prefill":
-            # return super()._forward(forward_input)
             output = super()._forward(forward_input)
-            # torch.distributed.barrier(device_ids=[torch.cuda.current_device()])
             _, next_tokens_cpu, copy_done = output
             copy_done.synchronize()
-            # max_seq_len = self.engine.max_seq_len
             for i, req in enumerate(forward_input.batch.reqs):
                 if req in self.finished_reqs or isinstance(req, ChunkedReq):
                     continue
 
                 next_token_id = next_tokens_cpu[i]
-                # logger.info(f"{torch.distributed.get_rank()} before req.append_host req[0]: {req}")
                 req.append_host(next_token_id.unsqueeze(0))
-                # logger.info(f"{torch.distributed.get_rank()} after req.append_host req[0]: {req}")
-                # next_token = int(next_token_id.item())
             return output
         elif forward_input.batch.phase == "decode":
             for i in range(self.gamma):
                 self._load_token_ids(forward_input)
                 batch, sample_args = forward_input.batch, forward_input.sample_args
-                # logger.info(f"{torch.distributed.get_rank()} Starting forward for {batch.phase}: {batch.input_ids}")
                 forward_output = self.engine.forward_batch(batch, sample_args)
                 self._write_token_ids(forward_input, forward_output)
                 forward_output.copy_done_event.synchronize()
@@ -732,10 +647,6 @@ class DraftScheduler(Scheduler):
                     req.append_host(next_tokens_cpu[idx_req].unsqueeze(0))
                 if i < self.gamma - 1:
                     forward_input = self._prepare_batch(batch)
-
-            # for i in range(len(forward_input.batch.reqs)):
-            #     logger.info(f"{torch.distributed.get_rank()} after draft req[{i}]: {forward_input.batch.reqs[i]}")
-            
 
             local_rank = get_tp_info().local_rank
             rank = get_tp_info().rank
@@ -748,14 +659,10 @@ class DraftScheduler(Scheduler):
                     else:
                         to_be_verified_tokens.extend(req.input_ids[-2 * self.gamma + 1 : - self.gamma + 1].numpy().tolist())
                     next_round_input.extend(req.input_ids[- self.gamma :].numpy().tolist())
-                # logger.info(f"{torch.distributed.get_rank()} to_be_verified_tokens: {to_be_verified_tokens}")
-                # logger.info(f"{torch.distributed.get_rank()} next_round_input: {next_round_input}")
                 msg = torch.tensor(to_be_verified_tokens + next_round_input, dtype=torch.int64, device="cuda")
                 torch.distributed.broadcast(msg, src=rank, group=self.engine.verify_group)
-            # logger.info(f"{torch.distributed.get_rank()} draft group finish broadcast msg")
             verify_res = torch.zeros((4, len(batch.reqs)), dtype=torch.int64, device="cuda")
             torch.distributed.broadcast(verify_res, src=0)
-            # logger.info(f"{torch.distributed.get_rank()} draft group finish receive verify_res")
 
             acc, rollout, revise_token, finish = verify_res.tolist()
             for idx, req in enumerate(batch.reqs):

@@ -10,7 +10,6 @@ import torch
 @dataclass
 class DecodeManager:
     running_reqs: Set[Req] = field(default_factory=set)
-    verify_done: Optional[torch.cuda.Event] = torch.get_device_module(torch.device(f"cuda:{torch.cuda.current_device()}")).Event()
 
     def add_reqs(self, reqs: Iterable[Req]) -> None:
         self.running_reqs.update(req for req in reqs if req.can_decode())
