@@ -107,6 +107,15 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
     )
 
     parser.add_argument(
+        "--draft-data-parallel-size",
+        "--draft-dp-size",
+        type=int,
+        dest="draft_dp_size",
+        default=1,
+        help="The draft data parallelism size.",
+    )
+
+    parser.add_argument(
         "--max-running-requests",
         type=int,
         dest="max_running_req",
@@ -135,14 +144,6 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         dest="use_dummy_weight",
         help="Use dummy weights for testing.",
     )
-
-    # assert ServerArgs.use_pynccl == True
-    # parser.add_argument(
-    #     "--disable-pynccl",
-    #     action="store_false",
-    #     dest="use_pynccl",
-    #     help="Disable PyNCCL for tensor parallelism.",
-    # )
 
     parser.add_argument(
         "--host",
@@ -247,7 +248,15 @@ def parse_args(args: List[str], run_shell: bool = False) -> Tuple[ServerArgs, bo
         else:
             kwargs["dtype"] = dtype_or_str
 
-    kwargs["tp_info"] = DistributedInfo(0, kwargs["target_tp_size"] + kwargs["draft_tp_size"], Role.TARGET, 0, kwargs["target_tp_size"])
+    kwargs["tp_info"] = DistributedInfo(
+        global_rank=0,
+        global_size=kwargs["target_tp_size"] + kwargs["draft_tp_size"], 
+        tp_rank=0,
+        tp_size=kwargs["target_tp_size"],
+        dp_rank=0,
+        dp_size=kwargs["draft_tp_size"],
+        role=Role.TARGET
+    )
 
     result = ServerArgs(**kwargs)
     logger = init_logger(__name__)

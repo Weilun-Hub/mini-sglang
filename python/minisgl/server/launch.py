@@ -61,10 +61,14 @@ def launch_server(run_shell: bool = False) -> None:
 
         mp.set_start_method("spawn", force=True)
 
-        target_size = server_args.target_tp_size
-        draft_size = server_args.draft_tp_size
+        target_tp_size = server_args.target_tp_size
+        draft_tp_size = server_args.draft_tp_size
+        target_dp_size = 1 # target dp is disable for current version
+        draft_dp_size = server_args.draft_tp_size
+        target_size = target_tp_size * target_dp_size
+        draft_size = draft_tp_size * draft_dp_size
         world_size = target_size + draft_size
-        logger.info(f"Launching {world_size} = #target + #draft = {target_size} + {draft_size} scheduler subprocesses")
+        logger.info(f"Launching {world_size} = #target(tp * dp) + #draft(tp * dp) = {target_tp_size} * {target_dp_size} + {draft_tp_size} * {draft_dp_size} scheduler subprocesses")
         
         # a multiprocessing queue to receive ack from subprocesses
         # so that we can guarantee all subprocesses are ready
@@ -73,12 +77,30 @@ def launch_server(run_shell: bool = False) -> None:
         for i in range(world_size):
 
             role = Role.TARGET if i < target_size else Role.DRAFT
-            local_rank = i if i < target_size else i - target_size
+            isTarget = role == Role.TARGET
+            local_size = target_size if isTarget else draft_size
+            local_rank = i if isTarget else i - target_size
+            local_dp_size = target_dp_size if isTarget else draft_dp_size
+            local_tp_size = target_tp_size if isTarget else draft_tp_size
+
+            local_tp_rank = local_rank % local_dp_size
+            local_dp_rank = local_rank // local_tp_size
+
 
             new_args = replace(
                 server_args,
-                tp_info=DistributedInfo(i, world_size, role, local_rank, target_size if role == Role.TARGET else draft_size),
+                tp_info=DistributedInfo(
+                    global_rank=i,
+                    global_size=world_size,
+                    tp_rank=local_tp_rank,
+                    tp_size=local_tp_size,
+                    dp_rank=local_dp_rank,
+                    dp_size=local_dp_size
+                    role=role
+                )
             )
+
+            # last developed here
 
             logger.info(f"Starting scheduler subprocess for TP rank {i} / {world_size} : role={role}, local_rank={local_rank}")
             mp.Process(
